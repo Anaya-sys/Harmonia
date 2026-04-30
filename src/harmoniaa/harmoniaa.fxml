@@ -12,37 +12,53 @@
 
 <StackPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="harmoniaa.Controller">
     <children>
-        <Label fx:id="label" />
-      <AnchorPane prefHeight="507.0" prefWidth="990.0" style="-fx-background-color: #151221;;">
-         <children>
-            <VBox layoutX="277.0" layoutY="120.0" prefHeight="316.0" prefWidth="366.0" style="-fx-background-color: #1E1A2E;; -fx-background-radius: 16; -fx-border-color: rgba(86,74,181,0.2);; -fx-border-radius: 16; -fx-effect: dropshadow(gaussian, rgba(86,74,181,0.1), 50, 0, 0, 25);; -fx-padding: 30; -fx-spacing: 15;">
-               <children>
-                  <HBox prefHeight="100.0" prefWidth="200.0">
-                     <children>
-                        <Button mnemonicParsing="false" prefHeight="27.0" prefWidth="172.0" style="-fx-background-color: #564AB5; -fx-background-radius: 8; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 6, 0, 0, 4);;" text="Iniciar Sesion" />
-                        <Button mnemonicParsing="false" prefHeight="26.0" prefWidth="153.0" style="-fx-background-color: transparent;; -fx-text-fill: #8F8AA8;; -fx-font-size: 13px;; -fx-cursor: hand;;" text="Crear Cuenta" />
-                     </children>
-                  </HBox>
-                  <StackPane prefHeight="218.0" prefWidth="324.0">
-                     <children>
-                        <TextField prefHeight="38.0" prefWidth="324.0" style="-fx-background-color: #272239; -fx-background-radius: 8; -fx-border-color: rgba(86,74,181,0.3); -fx-border-radius: 8; -fx-text-fill: #E9E9ED; -fx-prompt-text-fill: #8F8AA8; -fx-font-size: 13px;" StackPane.alignment="TOP_CENTER" />
-                        <TextField prefHeight="37.0" prefWidth="324.0" style="-fx-background-color: #272239; -fx-background-radius: 8; -fx-border-color: rgba(86,74,181,0.3); -fx-border-radius: 8; -fx-text-fill: #E9E9ED; -fx-prompt-text-fill: #8F8AA8; -fx-font-size: 13px;" StackPane.alignment="CENTER_LEFT" />
-                     </children>
-                  </StackPane>
-                  <Button mnemonicParsing="false" prefHeight="100.0" prefWidth="304.0" style="-fx-background-color: #BC7F15;; -fx-background-radius: 8; -fx-text-fill: white;; -fx-font-weight: bold;; -fx-font-size: 14px;; -fx-cursor: hand;; -fx-effect: dropshadow(gaussian, rgba(188,127,21,0.2), 20, 0, 0, 10);;" text="Iniciar Sesion" />
-               </children>
-            </VBox>
-            <Label layoutX="370.0" layoutY="87.0" text="tu tienda de musica, afinada al detalle" textFill="WHITE" />
-            <Circle fill="#bc7f15" layoutX="18.400000000000006" layoutY="414.0" opacity="0.1" radius="142.0" stroke="BLACK" strokeType="INSIDE" AnchorPane.bottomAnchor="-78.0" AnchorPane.leftAnchor="-146.0">
-               <effect>
-                  <GaussianBlur radius="63.0" />
-               </effect></Circle>
-            <Circle fill="#564ab5" layoutX="808.0" layoutY="92.0" opacity="0.1" radius="126.0" stroke="BLACK" strokeType="INSIDE" AnchorPane.rightAnchor="-100.0" AnchorPane.topAnchor="-100.0">
-               <effect>
-                  <GaussianBlur radius="63.0" />
-               </effect>
-            </Circle>
-         </children>
-      </AnchorPane>
+        <AnchorPane prefHeight="507.0" prefWidth="990.0" style="-fx-background-color: #151221;">
+            <children>
+                <VBox fx:id="cardlogin" layoutX="277.0" layoutY="80.0" prefWidth="366.0" style="-fx-background-color: #1E1A2E;                              -fx-background-radius: 16;                              -fx-border-color: rgba(86,74,181,0.2);                              -fx-border-radius: 16;                              -fx-effect: dropshadow(gaussian, rgba(86,74,181,0.1), 50, 0, 0, 25);                              -fx-padding: 28;                              -fx-spacing: 10;">
+                    <children>
+
+                      
+                        <HBox prefWidth="306.0" spacing="0">
+                            <children>
+                                <Button fx:id="btnIniciarTab" mnemonicParsing="false" onAction="#switchToLogin" prefHeight="32.0" prefWidth="172.0" text="Iniciar Sesión" />
+                                <Button fx:id="btnCrearTab" mnemonicParsing="false" onAction="#switchToRegister" prefHeight="32.0" prefWidth="153.0" text="Crear Cuenta" />
+                            </children>
+                        </HBox>
+
+                        
+                        <Label fx:id="lblNombre" managed="false" style="-fx-font-size: 11px;" text="Nombre Completo" textFill="#8F8AA8" visible="false" />
+                        <TextField fx:id="txtNombre" managed="false" prefHeight="38.0" prefWidth="306.0" promptText="Tu nombre completo" style="-fx-background-color: #272239;                                           -fx-background-radius: 8;                                           -fx-border-color: rgba(86,74,181,0.3);                                           -fx-border-radius: 8;                                           -fx-text-fill: #E9E9ED;                                           -fx-prompt-text-fill: #8F8AA8;                                           -fx-font-size: 13px;" visible="false" />
+
+                      
+                        <Label fx:id="lblId" managed="false" style="-fx-font-size: 11px;" text="ID de Usuario" textFill="#8F8AA8" visible="false" />
+                        <TextField fx:id="txtId" managed="false" prefHeight="38.0" prefWidth="306.0" promptText="Ej: 10012345" style="-fx-background-color: #272239;                                           -fx-background-radius: 8;                                           -fx-border-color: rgba(86,74,181,0.3);                                           -fx-border-radius: 8;                                           -fx-text-fill: #E9E9ED;                                           -fx-prompt-text-fill: #8F8AA8;                                           -fx-font-size: 13px;" visible="false" />
+
+                        
+                        <Label fx:id="lblEmail" style="-fx-font-size: 11px;" text="Correo Electrónico" textFill="#8F8AA8" />
+                        <TextField fx:id="emailField" prefHeight="38.0" prefWidth="306.0" promptText="correo@ejemplo.com" style="-fx-background-color: #272239;                                           -fx-background-radius: 8;                                           -fx-border-color: rgba(86,74,181,0.3);                                           -fx-border-radius: 8;                                           -fx-text-fill: #E9E9ED;                                           -fx-prompt-text-fill: #8F8AA8;                                           -fx-font-size: 13px;" />
+
+                        
+                        <Label fx:id="lblPassword" style="-fx-font-size: 11px;" text="Contraseña" textFill="#8F8AA8" />
+                        <TextField fx:id="txtPassword" prefHeight="38.0" prefWidth="306.0" promptText="••••••••" style="-fx-background-color: #272239;                                           -fx-background-radius: 8;                                           -fx-border-color: rgba(86,74,181,0.3);                                           -fx-border-radius: 8;                                           -fx-text-fill: #E9E9ED;                                           -fx-prompt-text-fill: #8F8AA8;                                           -fx-font-size: 13px;" />
+
+                        
+                        <Button fx:id="authActionButton" mnemonicParsing="false" onAction="#handleAuthAction" prefHeight="42.0" prefWidth="306.0" style="-fx-background-color: #BC7F15;-fx-background-radius: 8;                                        -fx-text-fill: white;                                        -fx-font-weight: bold;                                        -fx-font-size: 14px;                                        -fx-cursor: hand;                                        -fx-effect: dropshadow(gaussian, rgba(188,127,21,0.25), 20, 0, 0, 8);" text="Iniciar Sesión" />
+                        <Label fx:id="label" prefWidth="306.0" style="-fx-font-size: 12px; -fx-text-alignment: center;" wrapText="true" />
+
+                    </children>
+                </VBox>
+
+                
+                <Label layoutX="360.0" layoutY="51.0" style="-fx-font-size: 12px; -fx-opacity: 0.7;" text="tu tienda de música, afinada al detalle" textFill="WHITE" />
+                <Circle fill="#bc7f15" layoutX="18.4" layoutY="414.0" opacity="0.1" radius="142.0" stroke="BLACK" strokeType="INSIDE" AnchorPane.bottomAnchor="-78.0" AnchorPane.leftAnchor="-146.0">
+                    <effect><GaussianBlur radius="63.0" /></effect>
+                </Circle>
+                
+                <Circle fill="#564ab5" layoutX="808.0" layoutY="92.0" opacity="0.1" radius="126.0" stroke="BLACK" strokeType="INSIDE" AnchorPane.rightAnchor="-100.0" AnchorPane.topAnchor="-100.0">
+                    <effect><GaussianBlur radius="63.0" /></effect>
+                </Circle>
+
+            </children>
+        </AnchorPane>
     </children>
 </StackPane>

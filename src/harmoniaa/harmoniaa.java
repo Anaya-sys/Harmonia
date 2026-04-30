@@ -19,7 +19,7 @@ public class harmoniaa extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception{
         Parent root = FXMLLoader.load(getClass().getResource("harmoniaa.fxml"));
-        primaryStage.setTitle("Hello World");
+        primaryStage.setTitle("Harmonia");
         primaryStage.setScene(new Scene(root));
         primaryStage.show();
     }

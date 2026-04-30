@@ -16,6 +16,7 @@ public class Usuario {
     private String              email;
     private String              contrasena;
     private PerfilUsuario       perfil;
+    private final Rol           rol = null;
     private ArrayList<Pedido>   historial;
     private ArrayList<Producto> listaDeseos;
     private ArrayList<Opinion>  opiniones;
