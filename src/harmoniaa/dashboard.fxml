@@ -7,6 +7,8 @@
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.effect.GaussianBlur?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.GridPane?>
@@ -38,26 +40,10 @@
                      -fx-border-width: 0 1 0 0;">
 
             <!-- ── LOGO ── -->
-            <HBox alignment="CENTER_LEFT" spacing="12"
-                  style="-fx-padding: 26 18 20 18;">
-                <!-- Icono de nota musical / Glow circle -->
-                <StackPane prefWidth="38.0" prefHeight="38.0">
-                    <Circle radius="19.0"
-                            fill="#564AB5" opacity="0.18"/>
-                    <Label text="♩"
-                           style="-fx-font-size: 22px;
-                                  -fx-text-fill: #BC7F15;
-                                  -fx-font-weight: bold;"/>
-                </StackPane>
-                <VBox spacing="1">
-                    <Label text="Harmonia"
-                           style="-fx-font-size: 17px;
-                                  -fx-font-weight: bold;
-                                  -fx-text-fill: #E9E9ED;"/>
-                    <Label text="tu tienda de música"
-                           style="-fx-font-size: 9px;
-                                  -fx-text-fill: #8F8AA8;"/>
-                </VBox>
+            <HBox alignment="CENTER" style="-fx-padding: 22 18 18 18;">
+                <ImageView fitWidth="160.0" fitHeight="48.0" preserveRatio="true" pickOnBounds="true">
+                    <image><Image url="@logo.png"/></image>
+                </ImageView>
             </HBox>
 
             <Separator style="-fx-background-color: rgba(86,74,181,0.2);
