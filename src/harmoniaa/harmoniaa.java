@@ -12,6 +12,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 public class harmoniaa extends Application {
@@ -20,7 +21,17 @@ public class harmoniaa extends Application {
     public void start(Stage primaryStage) throws Exception{
         Parent root = FXMLLoader.load(getClass().getResource("harmoniaa.fxml"));
         primaryStage.setTitle("Harmonia");
-        primaryStage.setScene(new Scene(root));
+
+        // Tamaño inicial de la ventana
+        primaryStage.setScene(new Scene(root, 980, 660));
+
+        // Tamaño mínimo para que no se deforme
+        primaryStage.setMinWidth(720);
+        primaryStage.setMinHeight(520);
+
+        // Ícono en la barra superior y taskbar
+        primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("logoicono.png")));
+
         primaryStage.show();
     }
 
