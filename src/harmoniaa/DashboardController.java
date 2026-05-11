@@ -17,6 +17,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
@@ -69,11 +70,9 @@ public class DashboardController {
     @FXML private Button catVientos;
     @FXML private Button catAccesorios;
 
-    @FXML private Button precioTodos;
-    @FXML private Button precio0a500;
-    @FXML private Button precio500a2M;
-    @FXML private Button precio2Ma5M;
-    @FXML private Button precioMas5M;
+    @FXML private Slider sliderMin;
+    @FXML private Slider sliderMax;
+    @FXML private Label  lblRangoPrecio;
 
     @FXML private Button dispTodos;
     @FXML private Button dispDisponible;
@@ -111,7 +110,8 @@ public class DashboardController {
     private final List<Producto>   catalogo = new ArrayList<>();
 
     private String filtroCat    = "Todas";
-    private String filtroPrecio = "Todos";
+    private double precioMin   = 0;
+    private double precioMax   = 10_000_000;
     private String filtroDisp   = "Todos";
     private String busqueda     = "";
     private boolean modoEdicion = false;
@@ -151,6 +151,7 @@ public class DashboardController {
     // ══════════════════════════════════════════════════════════════════════════
     @FXML
     public void initialize() {
+        iniciarSlidersPrecio();
         cargarCatalogoDatos();
         cargarDatosUsuario();
         iniciarComboOrdenar();
@@ -303,16 +304,64 @@ public class DashboardController {
         renderCatalogo();
     }
 
+    private void iniciarSlidersPrecio() {
+        sliderMin.setMin(0); sliderMin.setMax(10_000_000); sliderMin.setValue(0);
+        sliderMax.setMin(0); sliderMax.setMax(10_000_000); sliderMax.setValue(10_000_000);
+
+        // Estilo de los tracks
+        aplicarEstiloSlider(sliderMin);
+        aplicarEstiloSlider(sliderMax);
+
+        sliderMin.valueProperty().addListener((obs, oldVal, newVal) -> {
+            double min = newVal.doubleValue();
+            double max = sliderMax.getValue();
+            if (min > max) { sliderMax.setValue(min); return; }
+            precioMin = min;
+            precioMax = max;
+            actualizarLabelRango();
+            renderCatalogo();
+        });
+
+        sliderMax.valueProperty().addListener((obs, oldVal, newVal) -> {
+            double max = newVal.doubleValue();
+            double min = sliderMin.getValue();
+            if (max < min) { sliderMin.setValue(max); return; }
+            precioMin = min;
+            precioMax = max;
+            actualizarLabelRango();
+            renderCatalogo();
+        });
+
+        actualizarLabelRango();
+    }
+
+    private void aplicarEstiloSlider(Slider s) {
+        s.setStyle(
+            "-fx-control-inner-background: #272239;" +
+            "-fx-focus-color: #564AB5;" +
+            "-fx-faint-focus-color: rgba(86,74,181,0.1);");
+        s.lookup(".track");
+    }
+
+    private void actualizarLabelRango() {
+        String min = formatearPrecioCorto(precioMin);
+        String max = formatearPrecioCorto(precioMax);
+        lblRangoPrecio.setText(min + "  –  " + max);
+    }
+
+    private String formatearPrecioCorto(double val) {
+        if (val >= 1_000_000) return String.format("%.1fM", val / 1_000_000);
+        if (val >= 1_000)     return String.format("%.0fk", val / 1_000);
+        return String.format("%.0f", val);
+    }
+
     @FXML
-    private void filtrarPrecio(javafx.event.ActionEvent e) {
-        Button src = (Button) e.getSource();
-        if      (src == precioTodos)  filtroPrecio = "Todos";
-        else if (src == precio0a500)  filtroPrecio = "0-500000";
-        else if (src == precio500a2M) filtroPrecio = "500000-2000000";
-        else if (src == precio2Ma5M)  filtroPrecio = "2000000-5000000";
-        else if (src == precioMas5M)  filtroPrecio = "5000000+";
-        for (Button b : List.of(precioTodos, precio0a500, precio500a2M, precio2Ma5M, precioMas5M))
-            b.setStyle(b == src ? ESTILO_PRECIO_ACTIVO : ESTILO_PRECIO_INACTIVO);
+    private void resetearRangoPrecio() {
+        sliderMin.setValue(0);
+        sliderMax.setValue(10_000_000);
+        precioMin = 0;
+        precioMax = 10_000_000;
+        actualizarLabelRango();
         renderCatalogo();
     }
 
@@ -336,15 +385,16 @@ public class DashboardController {
 
     @FXML
     private void limpiarFiltros() {
-        filtroCat = "Todas"; filtroPrecio = "Todos"; filtroDisp = "Todos"; busqueda = "";
+        filtroCat = "Todas"; filtroDisp = "Todos"; busqueda = "";
         txtCatalogoBuscar.clear();
         cmbOrdenar.setValue("Relevancia");
         catTodas.setStyle(ESTILO_FILTRO_ACTIVO);
         for (Button b : List.of(catGuitarras, catTeclados, catPercusion, catVientos, catAccesorios))
             b.setStyle(ESTILO_FILTRO_INACTIVO);
-        precioTodos.setStyle(ESTILO_PRECIO_ACTIVO);
-        for (Button b : List.of(precio0a500, precio500a2M, precio2Ma5M, precioMas5M))
-            b.setStyle(ESTILO_PRECIO_INACTIVO);
+        sliderMin.setValue(0);
+        sliderMax.setValue(10_000_000);
+        precioMin = 0; precioMax = 10_000_000;
+        actualizarLabelRango();
         dispTodos.setStyle(ESTILO_PRECIO_ACTIVO);
         dispDisponible.setStyle(ESTILO_PRECIO_INACTIVO);
         renderCatalogo();
@@ -359,15 +409,7 @@ public class DashboardController {
                 Categoria cat = getCategoriaById(p.getIdCategoria());
                 if (cat == null || !cat.getNombre().equals(filtroCat)) return false;
             }
-            if (!filtroPrecio.equals("Todos")) {
-                double pr = p.getPrecio();
-                switch (filtroPrecio) {
-                    case "0-500000"        -> { if (pr > 500000)                   return false; }
-                    case "500000-2000000"  -> { if (pr < 500000  || pr > 2000000)  return false; }
-                    case "2000000-5000000" -> { if (pr < 2000000 || pr > 5000000)  return false; }
-                    case "5000000+"        -> { if (pr < 5000000)                  return false; }
-                }
-            }
+            if (p.getPrecio() < precioMin || p.getPrecio() > precioMax) return false;
             if (filtroDisp.equals("Disponible") && !p.estaDisponible()) return false;
             if (!busqueda.isEmpty()) {
                 boolean ok = p.getNombre().toLowerCase().contains(busqueda)
@@ -741,19 +783,12 @@ public class DashboardController {
                 renderCatalogo();
             })); hay = true;
         }
-        if (!filtroPrecio.equals("Todos")) {
-            String lbl = switch (filtroPrecio) {
-                case "0-500000"        -> "Hasta $500k";
-                case "500000-2000000"  -> "$500k–$2M";
-                case "2000000-5000000" -> "$2M–$5M";
-                case "5000000+"        -> "Más de $5M";
-                default -> filtroPrecio;
-            };
+        if (precioMin > 0 || precioMax < 10_000_000) {
+            String lbl = formatearPrecioCorto(precioMin) + " – " + formatearPrecioCorto(precioMax);
             chipsActivos.getChildren().add(crearChip("💰 " + lbl, () -> {
-                filtroPrecio = "Todos";
-                precioTodos.setStyle(ESTILO_PRECIO_ACTIVO);
-                for (Button b : List.of(precio0a500, precio500a2M, precio2Ma5M, precioMas5M))
-                    b.setStyle(ESTILO_PRECIO_INACTIVO);
+                sliderMin.setValue(0); sliderMax.setValue(10_000_000);
+                precioMin = 0; precioMax = 10_000_000;
+                actualizarLabelRango();
                 renderCatalogo();
             })); hay = true;
         }
