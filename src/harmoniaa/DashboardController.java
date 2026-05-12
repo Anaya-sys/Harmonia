@@ -389,35 +389,61 @@ public class DashboardController {
 
     /** Abre la vista detalle de un producto en un panel overlay. */
     public void abrirDetalle(Producto p) {
-        productoActual = p;
 
-        // ── Construir el panel detalle ────────────────────────────────────────
-        paneDetalle = construirPanelDetalle(p);
+    cerrarDetalle();
 
-        // ── Añadir al StackPane raíz para que cubra todo el centro ───────────
-        // El BorderPane (raíz del FXML) es el padre; lo recuperamos
-        BorderPane bp = (BorderPane) paneCatalogo.getParent().getParent();
-        StackPane center = (StackPane) paneCatalogo.getParent();
-        center.getChildren().add(paneDetalle);
+    productoActual = p;
 
-        // Animación de entrada
-        paneDetalle.setOpacity(0.0);
-        FadeTransition ft = new FadeTransition(Duration.millis(220), paneDetalle);
-        ft.setFromValue(0.0); ft.setToValue(1.0); ft.play();
+    paneDetalle = construirPanelDetalle(p);
+
+    paneDetalle.setPickOnBounds(true);
+
+    StackPane center = (StackPane) paneCatalogo.getParent();
+
+    center.getChildren().add(paneDetalle);
+
+    paneDetalle.toFront();
+
+    paneDetalle.setOpacity(0.0);
+
+    FadeTransition ft =
+        new FadeTransition(Duration.millis(220), paneDetalle);
+
+    ft.setFromValue(0.0);
+    ft.setToValue(1.0);
+
+    ft.play();
+}
+
+private void cerrarDetalle() {
+
+    if (paneDetalle == null) {
+        return;
     }
 
-    /** Cierra y elimina el panel detalle si está visible. */
-    private void cerrarDetalle() {
-        if (paneDetalle == null) return;
-        Node parent = paneDetalle.getParent();
-        if (parent instanceof StackPane sp) {
-            FadeTransition ft = new FadeTransition(Duration.millis(180), paneDetalle);
-            ft.setFromValue(1.0); ft.setToValue(0.0);
-            ft.setOnFinished(e -> sp.getChildren().remove(paneDetalle));
-            ft.play();
-            paneDetalle = null;
-        }
+    ScrollPane detalleActual = paneDetalle;
+
+    detalleActual.setMouseTransparent(true);
+
+    Node parent = detalleActual.getParent();
+
+    if (parent instanceof StackPane sp) {
+
+        FadeTransition ft =
+            new FadeTransition(Duration.millis(180), detalleActual);
+
+        ft.setFromValue(1.0);
+        ft.setToValue(0.0);
+
+        ft.setOnFinished(e -> {
+            sp.getChildren().remove(detalleActual);
+        });
+
+        ft.play();
     }
+
+    paneDetalle = null;
+}
 
     /** Construye el ScrollPane con toda la vista de detalle del producto. */
     private ScrollPane construirPanelDetalle(Producto p) {
