@@ -4,8 +4,8 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.effect.GaussianBlur?>
 <?import javafx.scene.image.Image?>
@@ -709,7 +709,7 @@ cada nivel musical"
                 <left>
                     <ScrollPane fitToWidth="true"
                                 hbarPolicy="NEVER"
-                                prefWidth="200.0"
+                                prefWidth="290.0"
                                 style="-fx-background-color: transparent;
                                        -fx-background: transparent;
                                        -fx-border-color: rgba(86,74,181,0.2);
@@ -845,27 +845,25 @@ cada nivel musical"
                             <VBox spacing="8" style="-fx-padding: 14 12 14 12;">
 
                                 <Label text="Precio"
-                                       style="-fx-font-size: 10px;
+                                       style="-fx-font-size: 12px;
                                               -fx-font-weight: bold;
                                               -fx-text-fill: #BC7F15;
                                               -fx-letter-spacing: 1px;
                                               -fx-padding: 0 0 2 0;"/>
 
-                                <!-- Etiqueta rango actual -->
                                 <Label fx:id="lblRangoPrecio"
-                                       text="0 – 10.000.000"
+                                       text="0 - 10.000.000"
                                        maxWidth="99999"
-                                       style="-fx-font-size: 11px;
+                                       style="-fx-font-size: 13px;
                                               -fx-font-weight: bold;
                                               -fx-text-fill: #A99CF0;
                                               -fx-background-color: rgba(86,74,181,0.13);
                                               -fx-background-radius: 6;
-                                              -fx-padding: 4 8 4 8;"/>
+                                              -fx-padding: 6 10 6 10;"/>
 
-                                <!-- SLIDER MÍNIMO -->
                                 <VBox spacing="2">
-                                    <Label text="Mínimo"
-                                           style="-fx-font-size: 9.5px;
+                                    <Label text="Minimo"
+                                           style="-fx-font-size: 12px;
                                                   -fx-text-fill: #8F8AA8;"/>
                                     <Slider fx:id="sliderMin"
                                             min="0" max="10000000"
@@ -875,17 +873,16 @@ cada nivel musical"
                                             style="-fx-control-inner-background: #272239;"/>
                                     <HBox>
                                         <Label text="0"
-                                               style="-fx-font-size: 9px; -fx-text-fill: #6b6890;"/>
+                                               style="-fx-font-size: 11px; -fx-text-fill: #6b6890;"/>
                                         <Region HBox.hgrow="ALWAYS"/>
                                         <Label text="10M"
-                                               style="-fx-font-size: 9px; -fx-text-fill: #6b6890;"/>
+                                               style="-fx-font-size: 11px; -fx-text-fill: #6b6890;"/>
                                     </HBox>
                                 </VBox>
 
-                                <!-- SLIDER MÁXIMO -->
                                 <VBox spacing="2">
-                                    <Label text="Máximo"
-                                           style="-fx-font-size: 9.5px;
+                                    <Label text="Maximo"
+                                           style="-fx-font-size: 12px;
                                                   -fx-text-fill: #8F8AA8;"/>
                                     <Slider fx:id="sliderMax"
                                             min="0" max="10000000"
@@ -895,14 +892,13 @@ cada nivel musical"
                                             style="-fx-control-inner-background: #272239;"/>
                                     <HBox>
                                         <Label text="0"
-                                               style="-fx-font-size: 9px; -fx-text-fill: #6b6890;"/>
+                                               style="-fx-font-size: 11px; -fx-text-fill: #6b6890;"/>
                                         <Region HBox.hgrow="ALWAYS"/>
                                         <Label text="10M"
-                                               style="-fx-font-size: 9px; -fx-text-fill: #6b6890;"/>
+                                               style="-fx-font-size: 11px; -fx-text-fill: #6b6890;"/>
                                     </HBox>
                                 </VBox>
 
-                                <!-- Botón resetear rango -->
                                 <Button text="Restablecer rango"
                                         mnemonicParsing="false"
                                         onAction="#resetearRangoPrecio"
@@ -912,9 +908,9 @@ cada nivel musical"
                                                -fx-border-color: rgba(86,74,181,0.3);
                                                -fx-border-radius: 6;
                                                -fx-text-fill: #8F8AA8;
-                                               -fx-font-size: 10px;
+                                               -fx-font-size: 12px;
                                                -fx-cursor: hand;
-                                               -fx-padding: 5 0 5 0;"/>
+                                               -fx-padding: 7 0 7 0;"/>
 
                             </VBox>
 
@@ -1150,7 +1146,7 @@ cada nivel musical"
                                    HBox.hgrow="ALWAYS"
                                    style="-fx-font-size: 13px; -fx-text-fill: #8F8AA8;"/>
                             <Label fx:id="lblCarritoTotal"
-                                   text="Total: $0.00"
+                                   text="Total: 0.00"
                                    style="-fx-font-size: 18px;
                                           -fx-font-weight: bold;
                                           -fx-text-fill: #BC7F15;"/>
