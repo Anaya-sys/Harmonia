@@ -6,143 +6,62 @@
 <?import javafx.scene.effect.GaussianBlur?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 
-<StackPane prefHeight="600.0" prefWidth="900.0"
-           style="-fx-background-color: #151221;"
-           xmlns="http://javafx.com/javafx/26"
-           xmlns:fx="http://javafx.com/fxml/1"
-           fx:controller="harmoniaa.Controller">
+<StackPane prefHeight="600.0" prefWidth="900.0" style="-fx-background-color: #151221;" xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="harmoniaa.Controller">
     <children>
 
         <!-- Círculos decorativos de fondo -->
-        <Circle fill="#bc7f15" opacity="0.08" radius="180.0"
-                StackPane.alignment="BOTTOM_LEFT"
-                translateX="-80" translateY="80">
-            <effect><GaussianBlur radius="80.0"/></effect>
+        <Circle fill="#bc7f15" opacity="0.08" radius="180.0" translateX="-80" translateY="80" StackPane.alignment="BOTTOM_LEFT">
+            <effect><GaussianBlur radius="80.0" /></effect>
         </Circle>
-        <Circle fill="#564ab5" opacity="0.1" radius="160.0"
-                StackPane.alignment="TOP_RIGHT"
-                translateX="80" translateY="-80">
-            <effect><GaussianBlur radius="80.0"/></effect>
+        <Circle fill="#564ab5" opacity="0.1" radius="160.0" translateX="80" translateY="-80" StackPane.alignment="TOP_RIGHT">
+            <effect><GaussianBlur radius="80.0" /></effect>
         </Circle>
 
         <!-- Contenido centrado verticalmente -->
-        <VBox alignment="CENTER" spacing="24"
-              StackPane.alignment="CENTER">
+        <VBox alignment="CENTER" spacing="24" StackPane.alignment="CENTER">
 
             <!-- Logo -->
             <HBox alignment="CENTER">
-                <ImageView fitWidth="220.0" fitHeight="64.0"
-                           preserveRatio="true" pickOnBounds="true">
-                    <image><Image url="@logo.png"/></image>
+                <ImageView fitHeight="64.0" fitWidth="220.0" pickOnBounds="true" preserveRatio="true">
+                    <image><Image url="@logo.png" /></image>
                 </ImageView>
             </HBox>
 
             <!-- Card de login -->
-            <VBox fx:id="cardlogin"
-                  prefWidth="460.0" maxWidth="520.0"
-                  style="-fx-background-color: #1E1A2E;
-                         -fx-background-radius: 16;
-                         -fx-border-color: rgba(86,74,181,0.2);
-                         -fx-border-radius: 16;
-                         -fx-effect: dropshadow(gaussian, rgba(86,74,181,0.15), 50, 0, 0, 25);
-                         -fx-padding: 36;
-                         -fx-spacing: 12;">
+            <VBox fx:id="cardlogin" maxWidth="520.0" prefWidth="460.0" style="-fx-background-color: #1E1A2E;                          -fx-background-radius: 16;                          -fx-border-color: rgba(86,74,181,0.2);                          -fx-border-radius: 16;                          -fx-effect: dropshadow(gaussian, rgba(86,74,181,0.15), 50, 0, 0, 25);                          -fx-padding: 36;                          -fx-spacing: 12;">
                 <children>
 
                     <!-- Tabs Iniciar / Crear -->
-                    <HBox spacing="0">
-                        <Button fx:id="btnIniciarTab" mnemonicParsing="false"
-                                onAction="#switchToLogin"
-                                prefHeight="36.0" prefWidth="220.0"
-                                text="Iniciar Sesión"/>
-                        <Button fx:id="btnCrearTab" mnemonicParsing="false"
-                                onAction="#switchToRegister"
-                                prefHeight="36.0" prefWidth="168.0"
-                                text="Crear Cuenta"/>
+                    <HBox prefHeight="36.0" prefWidth="379.0" spacing="0">
+                        <Button fx:id="btnIniciarTab" mnemonicParsing="false" onAction="#switchToLogin" prefHeight="36.0" prefWidth="278.0" text="Iniciar Sesión" />
+                        <Button fx:id="btnCrearTab" mnemonicParsing="false" onAction="#switchToRegister" prefHeight="36.0" prefWidth="168.0" text="Crear Cuenta" />
                     </HBox>
 
                     <!-- Nombre (solo registro) -->
-                    <Label fx:id="lblNombre" managed="false"
-                           style="-fx-font-size: 11px;" text="Nombre Completo"
-                           textFill="#8F8AA8" visible="false"/>
-                    <TextField fx:id="txtNombre" managed="false"
-                               prefHeight="42.0" maxWidth="Infinity"
-                               promptText="Tu nombre completo"
-                               style="-fx-background-color: #272239;
-                                      -fx-background-radius: 8;
-                                      -fx-border-color: rgba(86,74,181,0.3);
-                                      -fx-border-radius: 8;
-                                      -fx-text-fill: #E9E9ED;
-                                      -fx-prompt-text-fill: #8F8AA8;
-                                      -fx-font-size: 13px;"
-                               visible="false"/>
+                    <Label fx:id="lblNombre" managed="false" style="-fx-font-size: 11px;" text="Nombre Completo" textFill="#8F8AA8" visible="false" />
+                    <TextField fx:id="txtNombre" managed="false" maxWidth="Infinity" prefHeight="42.0" promptText="Tu nombre completo" style="-fx-background-color: #272239;                                       -fx-background-radius: 8;                                       -fx-border-color: rgba(86,74,181,0.3);                                       -fx-border-radius: 8;                                       -fx-text-fill: #E9E9ED;                                       -fx-prompt-text-fill: #8F8AA8;                                       -fx-font-size: 13px;" visible="false" />
 
                     <!-- ID (solo registro) -->
-                    <Label fx:id="lblId" managed="false"
-                           style="-fx-font-size: 11px;" text="ID de Usuario"
-                           textFill="#8F8AA8" visible="false"/>
-                    <TextField fx:id="txtId" managed="false"
-                               prefHeight="42.0" maxWidth="Infinity"
-                               promptText="Ej: 10012345"
-                               style="-fx-background-color: #272239;
-                                      -fx-background-radius: 8;
-                                      -fx-border-color: rgba(86,74,181,0.3);
-                                      -fx-border-radius: 8;
-                                      -fx-text-fill: #E9E9ED;
-                                      -fx-prompt-text-fill: #8F8AA8;
-                                      -fx-font-size: 13px;"
-                               visible="false"/>
+                    <Label fx:id="lblId" managed="false" style="-fx-font-size: 11px;" text="ID de Usuario" textFill="#8F8AA8" visible="false" />
+                    <TextField fx:id="txtId" managed="false" maxWidth="Infinity" prefHeight="42.0" promptText="Ej: 10012345" style="-fx-background-color: #272239;                                       -fx-background-radius: 8;                                       -fx-border-color: rgba(86,74,181,0.3);                                       -fx-border-radius: 8;                                       -fx-text-fill: #E9E9ED;                                       -fx-prompt-text-fill: #8F8AA8;                                       -fx-font-size: 13px;" visible="false" />
 
                     <!-- Correo -->
-                    <Label fx:id="lblEmail" style="-fx-font-size: 11px;"
-                           text="Correo Electrónico" textFill="#8F8AA8"/>
-                    <TextField fx:id="emailField"
-                               prefHeight="42.0" maxWidth="Infinity"
-                               promptText="correo@ejemplo.com"
-                               style="-fx-background-color: #272239;
-                                      -fx-background-radius: 8;
-                                      -fx-border-color: rgba(86,74,181,0.3);
-                                      -fx-border-radius: 8;
-                                      -fx-text-fill: #E9E9ED;
-                                      -fx-prompt-text-fill: #8F8AA8;
-                                      -fx-font-size: 13px;"/>
+                    <Label fx:id="lblEmail" style="-fx-font-size: 11px;" text="Correo Electrónico" textFill="#8F8AA8" />
+                    <TextField fx:id="emailField" maxWidth="Infinity" prefHeight="42.0" promptText="correo@ejemplo.com" style="-fx-background-color: #272239;                                       -fx-background-radius: 8;                                       -fx-border-color: rgba(86,74,181,0.3);                                       -fx-border-radius: 8;                                       -fx-text-fill: #E9E9ED;                                       -fx-prompt-text-fill: #8F8AA8;                                       -fx-font-size: 13px;" />
 
                     <!-- Contraseña -->
-                    <Label fx:id="lblPassword" style="-fx-font-size: 11px;"
-                           text="Contraseña" textFill="#8F8AA8"/>
-                    <TextField fx:id="txtPassword"
-                               prefHeight="42.0" maxWidth="Infinity"
-                               promptText="••••••••"
-                               style="-fx-background-color: #272239;
-                                      -fx-background-radius: 8;
-                                      -fx-border-color: rgba(86,74,181,0.3);
-                                      -fx-border-radius: 8;
-                                      -fx-text-fill: #E9E9ED;
-                                      -fx-prompt-text-fill: #8F8AA8;
-                                      -fx-font-size: 13px;"/>
+                    <Label fx:id="lblPassword" style="-fx-font-size: 11px;" text="Contraseña" textFill="#8F8AA8" />
+                    <TextField fx:id="txtPassword" maxWidth="Infinity" prefHeight="42.0" promptText="••••••••" style="-fx-background-color: #272239;                                       -fx-background-radius: 8;                                       -fx-border-color: rgba(86,74,181,0.3);                                       -fx-border-radius: 8;                                       -fx-text-fill: #E9E9ED;                                       -fx-prompt-text-fill: #8F8AA8;                                       -fx-font-size: 13px;" />
 
                     <!-- Botón acción -->
-                    <Button fx:id="authActionButton" mnemonicParsing="false"
-                            onAction="#handleAuthAction"
-                            prefHeight="46.0" maxWidth="Infinity"
-                            style="-fx-background-color: #BC7F15;
-                                   -fx-background-radius: 8;
-                                   -fx-text-fill: white;
-                                   -fx-font-weight: bold;
-                                   -fx-font-size: 14px;
-                                   -fx-cursor: hand;
-                                   -fx-effect: dropshadow(gaussian, rgba(188,127,21,0.25), 20, 0, 0, 8);"
-                            text="Iniciar Sesión"/>
+                    <Button fx:id="authActionButton" maxWidth="Infinity" mnemonicParsing="false" onAction="#handleAuthAction" prefHeight="46.0" style="-fx-background-color: #BC7F15;                                    -fx-background-radius: 8;                                    -fx-text-fill: white;                                    -fx-font-weight: bold;                                    -fx-font-size: 14px;                                    -fx-cursor: hand;                                    -fx-effect: dropshadow(gaussian, rgba(188,127,21,0.25), 20, 0, 0, 8);" text="Iniciar Sesión" />
 
-                    <Label fx:id="label" maxWidth="Infinity"
-                           style="-fx-font-size: 12px; -fx-text-alignment: center;"
-                           wrapText="true"/>
+                    <Label fx:id="label" maxWidth="Infinity" style="-fx-font-size: 12px; -fx-text-alignment: center;" wrapText="true" />
 
                 </children>
             </VBox>

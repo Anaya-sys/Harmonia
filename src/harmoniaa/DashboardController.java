@@ -4,8 +4,14 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.ScaleTransition;
+import javafx.animation.Timeline;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
@@ -20,6 +26,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
@@ -36,10 +43,16 @@ import javafx.util.Duration;
 public class DashboardController {
 
     // ── SIDEBAR ────────────────────────────────────────────────────────────────
+    @FXML private VBox  sidebar;
+    @FXML private HBox  logoBox;
+    @FXML private VBox  userTextBox;
+    @FXML private javafx.scene.image.ImageView logoIcono;
+    @FXML private javafx.scene.image.ImageView logoCompleto;
     @FXML private Label  lblAvatarInitial;
     @FXML private Label  lblSidebarNombre;
     @FXML private Label  lblSidebarRol;
     @FXML private Button btnLogout;
+@FXML private HBox      categoriasBar;
 
     @FXML private Button navBtnInicio;
     @FXML private Button navBtnCatalogo;
@@ -57,6 +70,7 @@ public class DashboardController {
     @FXML private ScrollPane paneDeseos;
 
     // ── INICIO ─────────────────────────────────────────────────────────────────
+    @FXML private StackPane heroBanner;
     @FXML private Label     lblGreeting;
     @FXML private TextField txtBuscar;
     @FXML private FlowPane  productosGrid;
@@ -143,19 +157,19 @@ public class DashboardController {
     }
 
     // ── DIMENSIONES TARJETA ────────────────────────────────────────────────────
-    private static final double CARD_WIDTH    = 240;
-    private static final double IMG_HEIGHT    = 180;
-    private static final double NOMBRE_HEIGHT = 38;
-    private static final double DESC_HEIGHT   = 32;
+    private static final double CARD_WIDTH    = 290;
+    private static final double IMG_HEIGHT    = 220;
+    private static final double NOMBRE_HEIGHT = 46;
+    private static final double DESC_HEIGHT   = 38;
 
     // ── ESTILOS ────────────────────────────────────────────────────────────────
     private static final String ESTILO_NAV_ACTIVO =
-        "-fx-background-color: #564AB5; -fx-background-radius: 10; " +
-        "-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; " +
+        "-fx-background-color: #564AB5; -fx-background-radius: 12; " +
+        "-fx-text-fill: white; -fx-font-size: 15px; -fx-font-weight: bold; " +
         "-fx-cursor: hand; -fx-padding: 0 12 0 14;";
     private static final String ESTILO_NAV_INACTIVO =
-        "-fx-background-color: transparent; -fx-background-radius: 10; " +
-        "-fx-text-fill: #8F8AA8; -fx-font-size: 13px; " +
+        "-fx-background-color: transparent; -fx-background-radius: 12; " +
+        "-fx-text-fill: #8F8AA8; -fx-font-size: 15px; " +
         "-fx-cursor: hand; -fx-padding: 0 12 0 14;";
     private static final String ESTILO_FILTRO_ACTIVO =
         "-fx-background-color: rgba(86,74,181,0.2); -fx-background-radius: 8; " +
@@ -180,6 +194,24 @@ public class DashboardController {
     private static final String FB_ERROR =
         "-fx-text-fill: #FF6B6B; -fx-font-size: 12px; -fx-text-alignment: center;";
 
+    // ── SIDEBAR COLAPSABLE ─────────────────────────────────────────────────────
+    private boolean  sidebarExpanded = false;
+    private Timeline sidebarAnim;
+
+    private static final double   SIDEBAR_COLLAPSED = 68.0;
+    private static final double   SIDEBAR_EXPANDED  = 230.0;
+    private static final Duration ANIM_DURATION     = Duration.millis(200);
+
+    // Icono + etiqueta de cada botón de navegación
+    private static final String[][] NAV_TEXTOS = {
+        { "🏠",  "  Inicio"   },
+        { "🎸",  "  Catálogo" },
+        { "🛒",  "  Carrito"  },
+        { "♡",   "  Deseos"   },
+        { "📦",  "  Pedidos"  },
+        { "👤",  "  Perfil"   }
+    };
+
     // ══════════════════════════════════════════════════════════════════════════
     // INITIALIZE
     // ══════════════════════════════════════════════════════════════════════════
@@ -199,6 +231,91 @@ public class DashboardController {
         actualizarVistaCarrito();
         actualizarVistaDeseos();
         navBtnInicio.setStyle(ESTILO_NAV_ACTIVO);
+        inicializarSidebar();
+        construirHeroBanner();
+        construirCategoriasBar();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // SIDEBAR COLAPSABLE
+    // ══════════════════════════════════════════════════════════════════════════
+    private void inicializarSidebar() {
+        sidebar.setPrefWidth(SIDEBAR_COLLAPSED);
+        sidebar.setMinWidth(SIDEBAR_COLLAPSED);
+        sidebar.setMaxWidth(SIDEBAR_COLLAPSED);
+        userTextBox.setVisible(false);
+        userTextBox.setManaged(false);
+        btnLogout.setVisible(false);
+        btnLogout.setManaged(false);
+        actualizarTextosBotones(false);
+    }
+
+    @FXML
+    private void handleSidebarEntered() {
+        if (sidebarExpanded) return;
+        sidebarExpanded = true;
+        // Swap logo: icono → completo
+        logoIcono.setVisible(false);   logoIcono.setManaged(false);
+        logoCompleto.setVisible(true); logoCompleto.setManaged(true);
+        logoBox.setStyle("-fx-padding: 16 12 16 12; -fx-background-color: #0D0B17 ; -fx-background-radius: 0;");
+       sidebar.setStyle("-fx-background-color: #0D0B17  ; -fx-border-color: rgba(86,74,181,0.25); -fx-border-width: 0 1 0 0; -fx-effect: null;");
+        actualizarTextosBotones(true);
+        userTextBox.setVisible(true);  userTextBox.setManaged(true);
+        btnLogout.setVisible(true);    btnLogout.setManaged(true);
+        animarSidebar(SIDEBAR_EXPANDED);
+    }
+
+    @FXML
+    private void handleSidebarExited() {
+        if (!sidebarExpanded) return;
+        sidebarExpanded = false;
+        // Swap logo: completo → icono
+        logoCompleto.setVisible(false); logoCompleto.setManaged(false);
+        logoIcono.setVisible(true);     logoIcono.setManaged(true);
+        logoBox.setStyle("-fx-padding: 16 12 16 12; -fx-background-color: #120F1E; -fx-background-radius: 0;");
+        sidebar.setStyle("-fx-background-color: #1E1A2E; -fx-border-color: rgba(86,74,181,0.25); -fx-border-width: 0 1 0 0;");
+        animarSidebar(SIDEBAR_COLLAPSED);
+    }
+
+    private void animarSidebar(double targetWidth) {
+        if (sidebarAnim != null && sidebarAnim.getStatus() == Animation.Status.RUNNING)
+            sidebarAnim.stop();
+
+        DoubleProperty widthProp = new SimpleDoubleProperty(sidebar.getPrefWidth());
+        widthProp.addListener((obs, oldVal, newVal) -> {
+            double w = newVal.doubleValue();
+            sidebar.setPrefWidth(w);
+            sidebar.setMinWidth(w);
+            sidebar.setMaxWidth(w);
+        });
+
+        KeyValue kv = new KeyValue(widthProp, targetWidth,
+                javafx.animation.Interpolator.EASE_BOTH);
+        sidebarAnim = new Timeline(new KeyFrame(ANIM_DURATION, kv));
+        sidebarAnim.setOnFinished(e -> {
+            if (!sidebarExpanded) {
+                actualizarTextosBotones(false);
+                userTextBox.setVisible(false);
+                userTextBox.setManaged(false);
+                btnLogout.setVisible(false);
+                btnLogout.setManaged(false);
+            }
+        });
+        sidebarAnim.play();
+    }
+
+    private void actualizarTextosBotones(boolean conTexto) {
+        Button[] btns = { navBtnInicio, navBtnCatalogo, navBtnCarrito,
+                          navBtnDeseos, navBtnPedidos, navBtnPerfil };
+        for (int i = 0; i < btns.length; i++) {
+            if (btns[i] == null) continue;
+            String icono = NAV_TEXTOS[i][0];
+            String label = NAV_TEXTOS[i][1];
+            btns[i].setText(conTexto ? icono + label : icono);
+            btns[i].setAlignment(conTexto
+                    ? javafx.geometry.Pos.CENTER_LEFT
+                    : javafx.geometry.Pos.CENTER);
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -314,14 +431,18 @@ public class DashboardController {
     }
 
     private void iniciarSliders() {
+        sliderMin.setBlockIncrement(500_000);
+        sliderMax.setBlockIncrement(500_000);
         actualizarLabelRango();
         sliderMin.valueProperty().addListener((obs, o, n) -> {
-            if (n.doubleValue() > sliderMax.getValue()) sliderMin.setValue(sliderMax.getValue());
-            actualizarLabelRango(); renderCatalogo();
+            if (n.doubleValue() > sliderMax.getValue())
+                sliderMin.setValue(sliderMax.getValue());
+            actualizarLabelRango();
         });
         sliderMax.valueProperty().addListener((obs, o, n) -> {
-            if (n.doubleValue() < sliderMin.getValue()) sliderMax.setValue(sliderMin.getValue());
-            actualizarLabelRango(); renderCatalogo();
+            if (n.doubleValue() < sliderMin.getValue())
+                sliderMax.setValue(sliderMin.getValue());
+            actualizarLabelRango();
         });
     }
 
@@ -333,6 +454,10 @@ public class DashboardController {
     @FXML private void resetearRangoPrecio() {
         sliderMin.setValue(0); sliderMax.setValue(10_000_000);
         actualizarLabelRango(); renderCatalogo();
+    }
+
+    @FXML private void handleAplicarRangoPrecio() {
+        renderCatalogo();
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -1072,27 +1197,27 @@ private void cerrarDetalle() {
 
         Categoria cat = getCategoriaById(p.getIdCategoria());
         Label lblCat = new Label(cat != null ? cat.getNombre().toUpperCase() : "PRODUCTO");
-        lblCat.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #8b7cf8;");
-        lblCat.setPrefHeight(16); lblCat.setMinHeight(16); lblCat.setMaxHeight(16);
+        lblCat.setStyle("-fx-font-size: 11.5px; -fx-font-weight: bold; -fx-text-fill: #8b7cf8;");
+        lblCat.setPrefHeight(18); lblCat.setMinHeight(18); lblCat.setMaxHeight(18);
 
         Label lblNombre = new Label(p.getNombre());
         lblNombre.setPrefHeight(NOMBRE_HEIGHT); lblNombre.setMinHeight(NOMBRE_HEIGHT); lblNombre.setMaxHeight(NOMBRE_HEIGHT);
         lblNombre.setPrefWidth(CARD_WIDTH - 28); lblNombre.setMaxWidth(CARD_WIDTH - 28);
         lblNombre.setWrapText(true);
-        lblNombre.setStyle("-fx-font-size: 13.5px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+        lblNombre.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
 
         Label lblDesc = new Label(p.getDescripcion());
         lblDesc.setPrefHeight(DESC_HEIGHT); lblDesc.setMinHeight(DESC_HEIGHT); lblDesc.setMaxHeight(DESC_HEIGHT);
         lblDesc.setPrefWidth(CARD_WIDTH - 28); lblDesc.setMaxWidth(CARD_WIDTH - 28);
         lblDesc.setWrapText(true);
-        lblDesc.setStyle("-fx-font-size: 11px; -fx-text-fill: #6b6890;");
+        lblDesc.setStyle("-fx-font-size: 12.5px; -fx-text-fill: #6b6890;");
 
         Region sep = new Region(); sep.setPrefHeight(6);
 
         // Precio + ícono carrito
         HBox precioRow = new HBox(8); precioRow.setAlignment(Pos.CENTER_LEFT);
         Label lblPrecio = new Label("$" + String.format("%,.0f", p.getPrecio()));
-        lblPrecio.setStyle("-fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+        lblPrecio.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
         HBox.setHgrow(lblPrecio, Priority.ALWAYS);
 
         boolean yaEnCarrito = carrito.getItems().stream()
@@ -1121,8 +1246,8 @@ private void cerrarDetalle() {
         precioRow.getChildren().addAll(lblPrecio, btnCarrito);
         int nv = p.getVariantes().size();
         Label lblVar = new Label(nv > 0 ? nv + " variante" + (nv > 1 ? "s" : "") : "Producto único");
-        lblVar.setStyle("-fx-font-size: 10.5px; -fx-text-fill: #6b6890;");
-        lblVar.setPrefHeight(14); lblVar.setMinHeight(14); lblVar.setMaxHeight(14);
+        lblVar.setStyle("-fx-font-size: 12px; -fx-text-fill: #6b6890;");
+        lblVar.setPrefHeight(16); lblVar.setMinHeight(16); lblVar.setMaxHeight(16);
 
         body.getChildren().addAll(lblCat, lblNombre, lblDesc, sep, precioRow, lblVar);
         card.getChildren().addAll(imgZone, body);
@@ -1149,7 +1274,154 @@ private void cerrarDetalle() {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // INICIO – MINI CARDS
+    // INICIO – HERO BANNER
+    // ══════════════════════════════════════════════════════════════════════════
+    private void construirHeroBanner() {
+        // Imagen de fondo del banner
+        ImageView bannerImg = null;
+        try {
+            java.io.InputStream is = getClass().getResourceAsStream("banner.png");
+            if (is != null) {
+                Image img = new Image(is);
+                bannerImg = new ImageView(img);
+                bannerImg.setPreserveRatio(false);
+                // El ImageView se estirará con el StackPane via bindings
+            }
+        } catch (Exception ex) { /* si no existe, usamos gradiente */ }
+
+        // Overlay oscuro encima de la imagen para que el texto sea legible
+        javafx.scene.shape.Rectangle overlay = new javafx.scene.shape.Rectangle();
+        overlay.widthProperty().bind(heroBanner.widthProperty());
+        overlay.heightProperty().bind(heroBanner.heightProperty());
+        overlay.setFill(javafx.scene.paint.Color.web("#0D0B17", 0.62));
+
+        if (bannerImg != null) {
+            // La imagen ocupa todo el banner
+            bannerImg.fitWidthProperty().bind(heroBanner.widthProperty());
+            bannerImg.fitHeightProperty().bind(heroBanner.heightProperty());
+            heroBanner.getChildren().addAll(bannerImg, overlay);
+        } else {
+            // Fallback: gradiente si no hay imagen
+            heroBanner.setStyle(
+                "-fx-background-color: linear-gradient(to right, #0D0B17 0%, #1A1035 45%, #2A1A4A 100%);");
+        }
+
+        // Contenido del hero (igual que antes, ahora encima del fondo)
+        HBox contenido = new HBox(40);
+        contenido.setAlignment(Pos.CENTER_LEFT);
+        contenido.setPadding(new Insets(0, 56, 0, 56));
+
+        VBox textoHero = new VBox(14);
+        textoHero.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(textoHero, Priority.ALWAYS);
+
+        HBox badge = new HBox(6);
+        badge.setAlignment(Pos.CENTER_LEFT);
+        Label badgeDot = new Label("●");
+        badgeDot.setStyle("-fx-font-size: 8px; -fx-text-fill: #BC7F15;");
+        Label badgeText = new Label("NUEVA COLECCIÓN");
+        badgeText.setStyle(
+            "-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #BC7F15; " +
+            "-fx-letter-spacing: 2;");
+        badge.getChildren().addAll(badgeDot, badgeText);
+
+        Label titulo = new Label("Tu tienda de música,\nafinada al detalle.");
+        titulo.setStyle(
+            "-fx-font-size: 34px; -fx-font-weight: bold; -fx-text-fill: #FFFFFF; " +
+            "-fx-line-spacing: 4;");
+        titulo.setWrapText(true);
+
+        Label subtitulo = new Label(
+            "Descubre instrumentos, equipos y accesorios para músicos\nde todos los niveles.");
+        subtitulo.setStyle("-fx-font-size: 14px; -fx-text-fill: #D0CAFF; -fx-line-spacing: 3;");
+
+        HBox botones = new HBox(12);
+        botones.setAlignment(Pos.CENTER_LEFT);
+
+        Button btnExplorar = new Button("Explorar tienda  →");
+        btnExplorar.setStyle(
+            "-fx-background-color: #BC7F15; -fx-background-radius: 10; " +
+            "-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px; " +
+            "-fx-cursor: hand; -fx-padding: 11 24 11 24; " +
+            "-fx-effect: dropshadow(gaussian,rgba(188,127,21,0.45),16,0,0,5);");
+        btnExplorar.setOnMouseEntered(e -> btnExplorar.setStyle(
+            "-fx-background-color: #D4941A; -fx-background-radius: 10; " +
+            "-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px; " +
+            "-fx-cursor: hand; -fx-padding: 11 24 11 24; " +
+            "-fx-effect: dropshadow(gaussian,rgba(188,127,21,0.6),20,0,0,6);"));
+        btnExplorar.setOnMouseExited(e -> btnExplorar.setStyle(
+            "-fx-background-color: #BC7F15; -fx-background-radius: 10; " +
+            "-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px; " +
+            "-fx-cursor: hand; -fx-padding: 11 24 11 24; " +
+            "-fx-effect: dropshadow(gaussian,rgba(188,127,21,0.45),16,0,0,5);"));
+        btnExplorar.setOnAction(e -> navegarCatalogo());
+
+        Button btnOfertas = new Button("Ver ofertas");
+        btnOfertas.setStyle(
+            "-fx-background-color: transparent; -fx-background-radius: 10; " +
+            "-fx-border-color: rgba(255,255,255,0.55); -fx-border-radius: 10; " +
+            "-fx-text-fill: white; -fx-font-size: 13px; " +
+            "-fx-cursor: hand; -fx-padding: 11 24 11 24;");
+        btnOfertas.setOnAction(e -> navegarCatalogo());
+
+        botones.getChildren().addAll(btnExplorar, btnOfertas);
+
+        HBox trust = new HBox(20);
+        trust.setAlignment(Pos.CENTER_LEFT);
+        for (String t : new String[]{"✓  Envío gratis +$200k", "✓  Garantía 2 años", "✓  Soporte especializado"}) {
+            Label lbl = new Label(t);
+            lbl.setStyle("-fx-font-size: 12px; -fx-text-fill: rgba(220,215,255,0.85);");
+            trust.getChildren().add(lbl);
+        }
+
+        textoHero.getChildren().addAll(badge, titulo, subtitulo, botones, trust);
+
+        contenido.getChildren().add(textoHero);
+        heroBanner.getChildren().add(contenido);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // INICIO – CATEGORÍAS
+    // ══════════════════════════════════════════════════════════════════════════
+    private void construirCategoriasBar() {
+        categoriasBar.getChildren().clear();
+        String[][] cats = {
+            {"🎸", "Guitarras"}, {"🎹", "Pianos"}, {"🥁", "Percusión"},
+            {"🎻", "Cuerdas"},   {"🎤", "Voz"},    {"🎧", "Accesorios"}
+        };
+        boolean primera = true;
+        for (String[] cat : cats) {
+            VBox chip = new VBox(8);
+            chip.setAlignment(Pos.CENTER);
+            chip.setPadding(new Insets(16, 12, 16, 12));
+            HBox.setHgrow(chip, Priority.ALWAYS);  // cada chip ocupa el espacio disponible
+            String base = primera
+                ? "-fx-background-color: rgba(86,74,181,0.22); -fx-border-color: #564AB5;"
+                : "-fx-background-color: #1E1A2E; -fx-border-color: rgba(86,74,181,0.2);";
+            chip.setStyle(base +
+                " -fx-background-radius: 14; -fx-border-radius: 14; -fx-cursor: hand;");
+
+            Label emojiLbl = new Label(cat[0]);
+            emojiLbl.setStyle("-fx-font-size: 30px;");
+            Label textoLbl = new Label(cat[1]);
+            textoLbl.setStyle("-fx-font-size: 12.5px; -fx-font-weight: bold; " +
+                "-fx-text-fill: " + (primera ? "#A99CF0" : "#8F8AA8") + ";");
+
+            chip.getChildren().addAll(emojiLbl, textoLbl);
+            chip.setOnMouseEntered(e -> chip.setStyle(
+                "-fx-background-color: rgba(86,74,181,0.22); -fx-border-color: #564AB5; " +
+                "-fx-background-radius: 14; -fx-border-radius: 14; -fx-cursor: hand;"));
+            chip.setOnMouseExited(e -> chip.setStyle(base +
+                " -fx-background-radius: 14; -fx-border-radius: 14; -fx-cursor: hand;"));
+            chip.setOnMouseClicked(e -> navegarCatalogo());
+
+            categoriasBar.getChildren().add(chip);
+            primera = false;
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // INICIO – MINI CARDS (rediseñadas)
     // ══════════════════════════════════════════════════════════════════════════
     private void cargarProductosDestacadosInicio() {
         productosGrid.getChildren().clear();
@@ -1159,46 +1431,106 @@ private void cerrarDetalle() {
 
     private VBox crearMiniCard(Producto p) {
         VBox card = new VBox(0);
-        card.setPrefWidth(190); card.setMaxWidth(190); card.setMinWidth(190);
-        card.setStyle("-fx-background-color: #1E1A2E; -fx-background-radius: 10; " +
-            "-fx-border-color: rgba(86,74,181,0.18); -fx-border-radius: 10; -fx-cursor: hand;");
+        card.setPrefWidth(270); card.setMaxWidth(270); card.setMinWidth(270);
+        String cardNormal =
+            "-fx-background-color: #1E1A2E; -fx-background-radius: 14; " +
+            "-fx-border-color: rgba(86,74,181,0.18); -fx-border-radius: 14; -fx-cursor: hand; " +
+            "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),14,0,0,5);";
+        String cardHover =
+            "-fx-background-color: #252540; -fx-background-radius: 14; " +
+            "-fx-border-color: #564AB5; -fx-border-radius: 14; -fx-cursor: hand; " +
+            "-fx-effect: dropshadow(gaussian,rgba(86,74,181,0.4),22,0,0,7);";
+        card.setStyle(cardNormal);
 
+        // Zona imagen
         StackPane miniImg = new StackPane();
-        miniImg.setPrefHeight(110); miniImg.setMinHeight(110); miniImg.setMaxHeight(110);
-        miniImg.setStyle("-fx-background-color: #13111e; -fx-background-radius: 10 10 0 0;");
+        miniImg.setPrefHeight(175); miniImg.setMinHeight(175); miniImg.setMaxHeight(175);
+        miniImg.setStyle("-fx-background-color: #13111e; -fx-background-radius: 14 14 0 0;");
 
-        ImageView iv = cargarImagenProducto(p, 190, 110);
+        ImageView iv = cargarImagenProducto(p, 270, 175);
         if (iv != null) {
-            Rectangle clip = new Rectangle(190, 110);
-            clip.setArcWidth(20); clip.setArcHeight(20);
+            Rectangle clip = new Rectangle(270, 175);
+            clip.setArcWidth(28); clip.setArcHeight(28);
             miniImg.setClip(clip);
             miniImg.getChildren().add(iv);
         } else {
             Label emoji = new Label(getEmojiCategoria(p.getIdCategoria()));
-            emoji.setStyle("-fx-font-size: 28px;");
+            emoji.setStyle("-fx-font-size: 44px;");
             miniImg.getChildren().add(emoji);
         }
 
-        VBox body = new VBox(5); body.setStyle("-fx-padding: 10 12 12 12;");
+        // Badge de categoría sobre la imagen
+        Label badgeCat = new Label(getEmojiCategoria(p.getIdCategoria()) + "  " +
+            getCategoriaById(p.getIdCategoria()) != null
+                ? (getCategoriaById(p.getIdCategoria()) != null
+                    ? getCategoriaById(p.getIdCategoria()).getNombre() : "")
+                : "");
+        badgeCat.setStyle(
+            "-fx-background-color: rgba(0,0,0,0.55); -fx-background-radius: 6; " +
+            "-fx-text-fill: #E9E9ED; -fx-font-size: 9px; -fx-padding: 3 8 3 8;");
+        StackPane.setAlignment(badgeCat, Pos.TOP_LEFT);
+        badgeCat.setTranslateX(10); badgeCat.setTranslateY(10);
+
+        // Botón carrito circular sobre imagen
+        Button btnC = new Button("🛒");
+        btnC.setPrefSize(36, 36); btnC.setMinSize(36, 36); btnC.setMaxSize(36, 36);
+        btnC.setStyle(
+            "-fx-background-color: #564AB5; -fx-background-radius: 50%; " +
+            "-fx-text-fill: white; -fx-font-size: 15px; -fx-cursor: hand; -fx-padding: 0; " +
+            "-fx-effect: dropshadow(gaussian,rgba(86,74,181,0.5),10,0,0,3);");
+        btnC.setOnMouseEntered(e -> btnC.setStyle(
+            "-fx-background-color: #6c5ce7; -fx-background-radius: 50%; " +
+            "-fx-text-fill: white; -fx-font-size: 15px; -fx-cursor: hand; -fx-padding: 0;"));
+        btnC.setOnMouseExited(e -> btnC.setStyle(
+            "-fx-background-color: #564AB5; -fx-background-radius: 50%; " +
+            "-fx-text-fill: white; -fx-font-size: 15px; -fx-cursor: hand; -fx-padding: 0;"));
+        btnC.setOnAction(e -> {
+            Variante v = p.getVariantes().isEmpty() ? null : p.getVariantes().get(0);
+            carrito.agregar(new ItemCarrito(p, v, 1));
+            mostrarToast("🛒 \"" + p.getNombre() + "\" añadido al carrito.");
+            e.consume();
+        });
+        VBox cw = new VBox(btnC); cw.setPadding(new Insets(0, 10, 10, 0));
+        StackPane.setAlignment(cw, Pos.BOTTOM_RIGHT);
+
+        miniImg.getChildren().addAll(badgeCat, cw);
+
+        // Body
+        VBox body = new VBox(6); body.setPadding(new Insets(12, 14, 14, 14));
+
         Label nombre = new Label(p.getNombre());
-        nombre.setPrefHeight(32); nombre.setMinHeight(32); nombre.setMaxHeight(32);
-        nombre.setPrefWidth(166); nombre.setMaxWidth(166);
+        nombre.setPrefHeight(38); nombre.setMinHeight(38); nombre.setMaxHeight(38);
+        nombre.setPrefWidth(242); nombre.setMaxWidth(242);
         nombre.setWrapText(true);
-        nombre.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+        nombre.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+
+        Label desc = new Label(p.getDescripcion());
+        desc.setPrefWidth(242); desc.setMaxWidth(242);
+        desc.setWrapText(true);
+        desc.setPrefHeight(30); desc.setMaxHeight(30);
+        desc.setStyle("-fx-font-size: 11px; -fx-text-fill: #6b6890;");
+
+        HBox precioRow = new HBox();
+        precioRow.setAlignment(Pos.CENTER_LEFT);
         Label precio = new Label("$" + String.format("%,.0f", p.getPrecio()));
-        precio.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #BC7F15;");
-        body.getChildren().addAll(nombre, precio);
+        precio.setStyle("-fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #BC7F15;");
+        HBox.setHgrow(precio, Priority.ALWAYS);
+
+        // Badge disponibilidad
+        Label dispBadge = new Label(p.estaDisponible() ? "En stock" : "Sin stock");
+        dispBadge.setStyle(p.estaDisponible()
+            ? "-fx-font-size: 9px; -fx-text-fill: #10b981; -fx-background-color: rgba(16,185,129,0.12); " +
+              "-fx-background-radius: 4; -fx-padding: 2 6 2 6;"
+            : "-fx-font-size: 9px; -fx-text-fill: #FF6B6B; -fx-background-color: rgba(255,107,107,0.12); " +
+              "-fx-background-radius: 4; -fx-padding: 2 6 2 6;");
+
+        precioRow.getChildren().addAll(precio, dispBadge);
+        body.getChildren().addAll(nombre, desc, precioRow);
         card.getChildren().addAll(miniImg, body);
 
-        // Click → navega al catálogo y abre detalle
         card.setOnMouseClicked(e -> { navegarCatalogo(); abrirDetalle(p); });
-        card.setOnMouseEntered(e -> card.setStyle(
-            "-fx-background-color: #252540; -fx-background-radius: 10; " +
-            "-fx-border-color: #564AB5; -fx-border-radius: 10; -fx-cursor: hand; " +
-            "-fx-effect: dropshadow(gaussian,rgba(86,74,181,0.2),12,0,0,4);"));
-        card.setOnMouseExited(e  -> card.setStyle(
-            "-fx-background-color: #1E1A2E; -fx-background-radius: 10; " +
-            "-fx-border-color: rgba(86,74,181,0.18); -fx-border-radius: 10; -fx-cursor: hand;"));
+        card.setOnMouseEntered(e -> card.setStyle(cardHover));
+        card.setOnMouseExited(e  -> card.setStyle(cardNormal));
         return card;
     }
 
