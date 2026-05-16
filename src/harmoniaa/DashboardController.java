@@ -140,20 +140,20 @@ public class DashboardController {
     // ── MAPA DE IMÁGENES ───────────────────────────────────────────────────────
     private static final java.util.Map<Integer, String> IMG_PRODUCTO = new java.util.HashMap<>();
     static {
-        IMG_PRODUCTO.put(1,  "prodimg/p1_fender_strat.jpg");
-        IMG_PRODUCTO.put(2,  "prodimg/p2_gibson_lp.jpg");
-        IMG_PRODUCTO.put(3,  "prodimg/p3_fender_tele.jpg");
-        IMG_PRODUCTO.put(4,  "prodimg/p4_fender_bass.jpg");
-        IMG_PRODUCTO.put(5,  "prodimg/p5_yamaha_p125.jpg");
-        IMG_PRODUCTO.put(6,  "prodimg/p6_roland_fp90x.jpg");
-        IMG_PRODUCTO.put(7,  "prodimg/p7_roland_juno.jpg");
-        IMG_PRODUCTO.put(8,  "prodimg/p8_roland_td17.jpg");
-        IMG_PRODUCTO.put(9,  "prodimg/p9_yamaha_dtx.jpg");
-        IMG_PRODUCTO.put(10, "prodimg/p10_yamaha_sax.jpg");
-        IMG_PRODUCTO.put(11, "prodimg/p11_yamaha_flauta.jpg");
-        IMG_PRODUCTO.put(12, "prodimg/p12_ath_m50x.jpg");
-        IMG_PRODUCTO.put(13, "prodimg/p13_shure_sm58.jpg");
-        IMG_PRODUCTO.put(14, "prodimg/p14_at2020.jpg");
+        IMG_PRODUCTO.put(1,  "prodimg/p1_fender_strat.png");
+        IMG_PRODUCTO.put(2,  "prodimg/p2_gibson_lp.png");
+        IMG_PRODUCTO.put(3,  "prodimg/p3_fender_tele.png");
+        IMG_PRODUCTO.put(4,  "prodimg/p4_fender_bass.png");
+        IMG_PRODUCTO.put(5,  "prodimg/p5_yamaha_p125.png");
+        IMG_PRODUCTO.put(6,  "prodimg/p6_roland_fp90x.png");
+        IMG_PRODUCTO.put(7,  "prodimg/p7_roland_juno.png");
+        IMG_PRODUCTO.put(8,  "prodimg/p8_roland_td17.png");
+        IMG_PRODUCTO.put(9,  "prodimg/p9_yamaha_dtx.png");
+        IMG_PRODUCTO.put(10, "prodimg/p10_yamaha_sax.png");
+        IMG_PRODUCTO.put(11, "prodimg/p11_yamaha_flaut.png");
+        IMG_PRODUCTO.put(12, "prodimg/p12_ath_m50x.png");
+        IMG_PRODUCTO.put(13, "prodimg/p13_shure_sm58.png");
+        IMG_PRODUCTO.put(14, "prodimg/p14_at2020.png");
     }
 
     // ── DIMENSIONES TARJETA ────────────────────────────────────────────────────
@@ -390,7 +390,7 @@ public class DashboardController {
             ImageView iv = new ImageView(img);
             iv.setFitWidth(ancho);
             iv.setFitHeight(alto);
-            iv.setPreserveRatio(false);
+            iv.setPreserveRatio(true);
             iv.setSmooth(true);
             return iv;
         } catch (Exception ex) { return null; }
@@ -616,21 +616,21 @@ private void cerrarDetalle() {
         // ---- Columna izquierda: imagen grande + miniaturas variantes ----------
         VBox colImg = new VBox(14);
         colImg.setAlignment(Pos.TOP_CENTER);
-        colImg.setMinWidth(340); colImg.setPrefWidth(340); colImg.setMaxWidth(340);
+        colImg.setMinWidth(500); colImg.setPrefWidth(500); colImg.setMaxWidth(500);
 
         // Imagen principal
         StackPane imgGrande = new StackPane();
-        imgGrande.setPrefSize(320, 320);
-        imgGrande.setMinSize(320, 320);
-        imgGrande.setMaxSize(320, 320);
+        imgGrande.setPrefSize(480, 480);
+        imgGrande.setMinSize(480, 480);
+        imgGrande.setMaxSize(480, 480);
         imgGrande.setStyle(
             "-fx-background-color: #1E1A2E; -fx-background-radius: 16; " +
             "-fx-border-color: rgba(86,74,181,0.2); -fx-border-radius: 16;");
 
-        ImageView ivGrande = cargarImagenProducto(p, 320, 320);
+        ImageView ivGrande = cargarImagenProducto(p, 480, 480);
         if (ivGrande != null) {
             ivGrande.setPreserveRatio(true);
-            Rectangle clipG = new Rectangle(320, 320);
+            Rectangle clipG = new Rectangle(480, 480);
             clipG.setArcWidth(32); clipG.setArcHeight(32);
             imgGrande.setClip(clipG);
             imgGrande.getChildren().add(ivGrande);
