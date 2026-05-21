@@ -156,13 +156,13 @@ public class DashboardController {
         IMG_PRODUCTO.put(14, "prodimg/p14_at2020.png");
     }
 
-    // ── DIMENSIONES TARJETA ────────────────────────────────────────────────────
+    
     private static final double CARD_WIDTH    = 290;
     private static final double IMG_HEIGHT    = 220;
     private static final double NOMBRE_HEIGHT = 46;
     private static final double DESC_HEIGHT   = 38;
 
-    // ── ESTILOS ────────────────────────────────────────────────────────────────
+    
     private static final String ESTILO_NAV_ACTIVO =
         "-fx-background-color: #564AB5; -fx-background-radius: 12; " +
         "-fx-text-fill: white; -fx-font-size: 15px; -fx-font-weight: bold; " +
@@ -194,7 +194,7 @@ public class DashboardController {
     private static final String FB_ERROR =
         "-fx-text-fill: #FF6B6B; -fx-font-size: 12px; -fx-text-alignment: center;";
 
-    // ── SIDEBAR COLAPSABLE ─────────────────────────────────────────────────────
+    
     private boolean  sidebarExpanded = false;
     private Timeline sidebarAnim;
 
@@ -236,9 +236,7 @@ public class DashboardController {
         construirCategoriasBar();
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // SIDEBAR COLAPSABLE
-    // ══════════════════════════════════════════════════════════════════════════
+
     private void inicializarSidebar() {
         sidebar.setPrefWidth(SIDEBAR_COLLAPSED);
         sidebar.setMinWidth(SIDEBAR_COLLAPSED);
@@ -318,9 +316,7 @@ public class DashboardController {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // DATOS CATÁLOGO (14 productos)
-    // ══════════════════════════════════════════════════════════════════════════
+  
     private void cargarCatalogoDatos() {
         Producto p1 = new Producto(1, "Fender Stratocaster Player",
             "Guitarra eléctrica con pastillas Player Series", 2899000, 1, 1);
