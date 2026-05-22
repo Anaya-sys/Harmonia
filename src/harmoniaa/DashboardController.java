@@ -37,6 +37,8 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Circle;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -66,7 +68,7 @@ public class DashboardController {
     @FXML private BorderPane paneCatalogo;
     @FXML private ScrollPane panePerfil;
     @FXML private ScrollPane paneCarrito;
-    @FXML private VBox       panePedidos;
+    @FXML private ScrollPane panePedidos;
     @FXML private ScrollPane paneDeseos;
 
     // ── INICIO ─────────────────────────────────────────────────────────────────
@@ -107,6 +109,18 @@ public class DashboardController {
     @FXML private Label lblDeseosVacio;
     @FXML private VBox  deseosItemsContainer;
 
+    // ── PEDIDOS ────────────────────────────────────────────────────────────────
+    @FXML private VBox   lblPedidosVacio;       // VBox estado vacío
+    @FXML private VBox   pedidosItemsContainer;
+    @FXML private Label  lblContadorPedidos;
+    @FXML private Label  lblTotalGastado;
+    @FXML private Label  lblNumeroPedidos;
+    @FXML private Label  lblProductosComprados;
+    @FXML private Button tabPedTodos;
+    @FXML private Button tabPedConfirmados;
+    @FXML private Button tabPedEnCamino;
+    @FXML private Button tabPedEntregados;
+
    
     @FXML private Label     lblPerfilInitial;
     @FXML private Label     lblPerfilNombre;
@@ -130,6 +144,7 @@ public class DashboardController {
     private String  filtroCat   = "Todas";
     private String  filtroDisp  = "Todos";
     private String  busqueda    = "";
+    private String  filtroPedidos = "Todos";
     private boolean modoEdicion = false;
 
    
@@ -481,7 +496,7 @@ public class DashboardController {
     @FXML private void navegarCatalogo() { mostrarSeccion(paneCatalogo,  navBtnCatalogo); renderCatalogo(); }
     @FXML private void navegarCarrito()  { actualizarVistaCarrito(); mostrarSeccion(paneCarrito,  navBtnCarrito); }
     @FXML private void navegarDeseos()   { actualizarVistaDeseos();  mostrarSeccion(paneDeseos,   navBtnDeseos); }
-    @FXML private void navegarPedidos()  { mostrarSeccion(panePedidos,   navBtnPedidos); }
+    @FXML private void navegarPedidos()  { actualizarVistaPedidos(); mostrarSeccion(panePedidos,  navBtnPedidos); }
     @FXML private void navegarPerfil()   { mostrarSeccion(panePerfil,    navBtnPerfil); }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -1583,11 +1598,378 @@ private void cerrarDetalle() {
         if (UserStore.getUsuarioActivo() != null)
             UserStore.getUsuarioActivo().agregarAlHistorial(pedido);
         carrito.vaciar(); actualizarVistaCarrito();
-        lblCarritoVacio.setText("✅  ¡Pedido #" + pedido.getId() + " confirmado! ¡Gracias!");
+        lblCarritoVacio.setText("✅  ¡Pedido #" + pedido.getId() + " confirmado! Revisa tu historial en 📦 Pedidos.");
         lblCarritoVacio.setStyle("-fx-font-size: 13px; -fx-text-fill: #10b981; " +
             "-fx-text-alignment: center; -fx-padding: 40 0 40 0; " +
             "-fx-background-color: rgba(16,185,129,0.06); -fx-background-radius: 12;");
         lblCarritoVacio.setVisible(true); lblCarritoVacio.setManaged(true);
+        // Navegar automáticamente al historial con retardo breve para que el usuario vea el mensaje
+        javafx.animation.PauseTransition pausa = new javafx.animation.PauseTransition(Duration.seconds(1.8));
+        pausa.setOnFinished(e -> navegarPedidos());
+        pausa.play();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // PEDIDOS — HISTORIAL
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private static final String TAB_PED_ACTIVO =
+        "-fx-background-color: transparent; -fx-background-radius: 0; " +
+        "-fx-border-color: transparent transparent #564AB5 transparent; " +
+        "-fx-border-width: 0 0 2 0; " +
+        "-fx-text-fill: #A99CF0; -fx-font-size: 13px; -fx-font-weight: bold; " +
+        "-fx-cursor: hand; -fx-padding: 0 18 0 18;";
+    private static final String TAB_PED_INACTIVO =
+        "-fx-background-color: transparent; -fx-background-radius: 0; " +
+        "-fx-border-color: transparent; " +
+        "-fx-text-fill: #8F8AA8; -fx-font-size: 13px; " +
+        "-fx-cursor: hand; -fx-padding: 0 18 0 18;";
+
+    /** Actualiza toda la vista del historial de pedidos. */
+    private void actualizarVistaPedidos() {
+        Usuario u = UserStore.getUsuarioActivo();
+        List<Pedido> historial = (u != null) ? u.getHistorial() : new java.util.ArrayList<>();
+        if (historial == null) historial = new java.util.ArrayList<>();
+
+        // ── Estadísticas ──────────────────────────────────────────────────────
+        int totalPedidos   = historial.size();
+        double totalGasto  = historial.stream().mapToDouble(this::calcularTotalPedido).sum();
+        long   totalProds  = historial.stream()
+                                .flatMap(p -> obtenerItemsPedido(p).stream())
+                                .mapToLong(ItemCarrito::getCantidad).sum();
+
+        lblContadorPedidos.setText(totalPedidos + (totalPedidos == 1 ? " pedido" : " pedidos"));
+        lblNumeroPedidos.setText(String.valueOf(totalPedidos));
+        lblTotalGastado.setText("$" + String.format("%,.0f", totalGasto));
+        lblProductosComprados.setText(String.valueOf(totalProds));
+
+        // ── Filtrado por tab activo ───────────────────────────────────────────
+        List<Pedido> filtrados = filtrarPorTab(historial, filtroPedidos);
+
+        // ── Mostrar / ocultar estado vacío ────────────────────────────────────
+        boolean vacio = filtrados.isEmpty();
+        lblPedidosVacio.setVisible(vacio);
+        lblPedidosVacio.setManaged(vacio);
+
+        // ── Renderizar tarjetas (más recientes primero) ───────────────────────
+        pedidosItemsContainer.getChildren().clear();
+        // Invertir para mostrar el pedido más reciente primero
+        List<Pedido> ordenados = new java.util.ArrayList<>(filtrados);
+        java.util.Collections.reverse(ordenados);
+        for (Pedido p : ordenados)
+            pedidosItemsContainer.getChildren().add(crearTarjetaPedido(p));
+    }
+
+    /** Filtra la lista según el tab activo. */
+    private List<Pedido> filtrarPorTab(List<Pedido> historial, String tab) {
+        return switch (tab) {
+            case "Confirmados" -> historial.stream()
+                .filter(p -> estadoPedidoEs(p, "CONFIRMADO", "PENDIENTE", "EN_PREPARACION"))
+                .collect(Collectors.toList());
+            case "En camino" -> historial.stream()
+                .filter(p -> estadoPedidoEs(p, "EN_CAMINO", "ENVIADO"))
+                .collect(Collectors.toList());
+            case "Entregados" -> historial.stream()
+                .filter(p -> estadoPedidoEs(p, "ENTREGADO", "COMPLETADO"))
+                .collect(Collectors.toList());
+            default -> new java.util.ArrayList<>(historial);
+        };
+    }
+
+    /** Verifica si el estado de un pedido coincide con alguno de los valores dados. */
+    private boolean estadoPedidoEs(Pedido pedido, String... estados) {
+        String estadoActual = obtenerEstadoTexto(pedido);
+        for (String e : estados)
+            if (estadoActual.equalsIgnoreCase(e)) return true;
+        return false;
+    }
+
+    /** Obtiene el texto del estado del pedido de forma segura. */
+    private String obtenerEstadoTexto(Pedido pedido) {
+        try {
+            Object estado = pedido.getClass().getMethod("getEstado").invoke(pedido);
+            if (estado != null) return estado.toString();
+        } catch (Exception ignored) {}
+        try {
+            Object estado = pedido.getClass().getMethod("getEstadoActual").invoke(pedido);
+            if (estado != null) return estado.toString();
+        } catch (Exception ignored) {}
+        return "CONFIRMADO";
+    }
+
+    /** Obtiene los ítems de un pedido de forma segura. */
+    @SuppressWarnings("unchecked")
+    private List<ItemCarrito> obtenerItemsPedido(Pedido pedido) {
+        try {
+            Object items = pedido.getClass().getMethod("getItems").invoke(pedido);
+            if (items instanceof List<?>) return (List<ItemCarrito>) items;
+        } catch (Exception ignored) {}
+        return java.util.Collections.emptyList();
+    }
+
+    /** Calcula el total de un pedido sumando sus ítems. */
+    private double calcularTotalPedido(Pedido pedido) {
+        return obtenerItemsPedido(pedido).stream()
+            .mapToDouble(ItemCarrito::calcularSubtotal)
+            .sum();
+    }
+
+    /** Handler para los tabs de filtro de pedidos. */
+    @FXML private void filtrarPedidos(javafx.event.ActionEvent e) {
+        Button src = (Button) e.getSource();
+        if      (src == tabPedTodos)       filtroPedidos = "Todos";
+        else if (src == tabPedConfirmados) filtroPedidos = "Confirmados";
+        else if (src == tabPedEnCamino)    filtroPedidos = "En camino";
+        else if (src == tabPedEntregados)  filtroPedidos = "Entregados";
+        // Actualizar estilos de tabs
+        for (Button b : List.of(tabPedTodos, tabPedConfirmados, tabPedEnCamino, tabPedEntregados))
+            b.setStyle(b == src ? TAB_PED_ACTIVO : TAB_PED_INACTIVO);
+        actualizarVistaPedidos();
+    }
+
+    /** Construye la tarjeta visual de un pedido. */
+    private VBox crearTarjetaPedido(Pedido pedido) {
+        List<ItemCarrito> items = obtenerItemsPedido(pedido);
+        double total = calcularTotalPedido(pedido);
+        String estadoTexto = obtenerEstadoTexto(pedido);
+
+        VBox card = new VBox(0);
+        card.setStyle(
+            "-fx-background-color: #1E1A2E; -fx-background-radius: 14; " +
+            "-fx-border-color: rgba(86,74,181,0.2); -fx-border-radius: 14; " +
+            "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.3),10,0,0,4);");
+
+        // ── CABECERA DE LA TARJETA ────────────────────────────────────────────
+        HBox header = new HBox(12);
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setPadding(new Insets(16, 18, 14, 18));
+        header.setStyle("-fx-border-color: rgba(86,74,181,0.12); -fx-border-width: 0 0 1 0;");
+
+        Label lblNum = new Label("Pedido  #" + pedido.getId());
+        lblNum.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+
+        Region spacerH = new Region(); HBox.setHgrow(spacerH, Priority.ALWAYS);
+
+        // Badge de estado
+        Label estadoBadge = crearBadgeEstado(estadoTexto);
+
+        // Cantidad de ítems
+        int totalItems = items.stream().mapToInt(ItemCarrito::getCantidad).sum();
+        Label lblItems = new Label(totalItems + " producto" + (totalItems != 1 ? "s" : ""));
+        lblItems.setStyle("-fx-font-size: 11px; -fx-text-fill: #6b6890;");
+
+        header.getChildren().addAll(lblNum, spacerH, lblItems, estadoBadge);
+
+        // ── TIMELINE DE ESTADO ────────────────────────────────────────────────
+        HBox timeline = crearTimeline(estadoTexto);
+        timeline.setPadding(new Insets(12, 18, 12, 18));
+        timeline.setStyle("-fx-border-color: rgba(86,74,181,0.08); -fx-border-width: 0 0 1 0;");
+
+        // ── LISTA DE ÍTEMS (máx 2 visibles + "y X más") ───────────────────────
+        VBox listaItems = new VBox(8);
+        listaItems.setPadding(new Insets(14, 18, 12, 18));
+
+        int maxVisible = Math.min(2, items.size());
+        for (int i = 0; i < maxVisible; i++) {
+            ItemCarrito it = items.get(i);
+            HBox fila = new HBox(10);
+            fila.setAlignment(Pos.CENTER_LEFT);
+
+            Label emojiProd = new Label(getEmojiCategoria(it.getProducto().getIdCategoria()));
+            emojiProd.setStyle("-fx-font-size: 18px; -fx-min-width: 28;");
+
+            VBox infoItem = new VBox(1); HBox.setHgrow(infoItem, Priority.ALWAYS);
+            Label nomItem = new Label(it.getProducto().getNombre());
+            nomItem.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #D8D6E8;");
+            String vDesc = it.getVariante() != null ? "  ·  " + it.getVariante().getDescripcion() : "";
+            Label detItem = new Label("Cant: " + it.getCantidad() + vDesc);
+            detItem.setStyle("-fx-font-size: 11px; -fx-text-fill: #6b6890;");
+            infoItem.getChildren().addAll(nomItem, detItem);
+
+            Label subItem = new Label("$" + String.format("%,.0f", it.calcularSubtotal()));
+            subItem.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #A99CF0;");
+
+            fila.getChildren().addAll(emojiProd, infoItem, subItem);
+            listaItems.getChildren().add(fila);
+        }
+        if (items.size() > 2) {
+            Label masItems = new Label("+" + (items.size() - 2) + " producto" + (items.size() - 2 != 1 ? "s" : "") + " más");
+            masItems.setStyle("-fx-font-size: 11px; -fx-text-fill: #564AB5; -fx-padding: 2 0 0 28;");
+            listaItems.getChildren().add(masItems);
+        }
+        if (items.isEmpty()) {
+            Label sinItems = new Label("Sin productos registrados");
+            sinItems.setStyle("-fx-font-size: 12px; -fx-text-fill: #6b6890;");
+            listaItems.getChildren().add(sinItems);
+        }
+
+        // ── FOOTER: total + botones ───────────────────────────────────────────
+        HBox footer = new HBox(12);
+        footer.setAlignment(Pos.CENTER_LEFT);
+        footer.setPadding(new Insets(12, 18, 16, 18));
+        footer.setStyle("-fx-border-color: rgba(86,74,181,0.12); -fx-border-width: 1 0 0 0;");
+
+        Label lblTotal = new Label("Total:  $" + String.format("%,.0f", total));
+        lblTotal.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #BC7F15;");
+        HBox.setHgrow(lblTotal, Priority.ALWAYS);
+
+        // Botón Reordenar
+        Button btnReordenar = new Button("🔄  Reordenar");
+        btnReordenar.setStyle(
+            "-fx-background-color: transparent; -fx-background-radius: 8; " +
+            "-fx-border-color: rgba(86,74,181,0.4); -fx-border-radius: 8; " +
+            "-fx-text-fill: #A99CF0; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 7 14 7 14;");
+        btnReordenar.setOnMouseEntered(ev -> btnReordenar.setStyle(
+            "-fx-background-color: rgba(86,74,181,0.15); -fx-background-radius: 8; " +
+            "-fx-border-color: #564AB5; -fx-border-radius: 8; " +
+            "-fx-text-fill: white; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 7 14 7 14;"));
+        btnReordenar.setOnMouseExited(ev -> btnReordenar.setStyle(
+            "-fx-background-color: transparent; -fx-background-radius: 8; " +
+            "-fx-border-color: rgba(86,74,181,0.4); -fx-border-radius: 8; " +
+            "-fx-text-fill: #A99CF0; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 7 14 7 14;"));
+        btnReordenar.setOnAction(ev -> reordenarPedido(items));
+
+        // Botón Ver dirección
+        Button btnInfo = new Button("📍  " + obtenerDireccionPedido(pedido));
+        btnInfo.setStyle(
+            "-fx-background-color: transparent; -fx-background-radius: 8; " +
+            "-fx-border-color: rgba(188,127,21,0.3); -fx-border-radius: 8; " +
+            "-fx-text-fill: #BC7F15; -fx-font-size: 11px; -fx-cursor: default; -fx-padding: 7 12 7 12;");
+        btnInfo.setMouseTransparent(true);
+
+        footer.getChildren().addAll(lblTotal, btnInfo, btnReordenar);
+        card.getChildren().addAll(header, timeline, listaItems, footer);
+
+        // Hover sutil en la tarjeta completa
+        card.setOnMouseEntered(ev -> card.setStyle(
+            "-fx-background-color: #22203a; -fx-background-radius: 14; " +
+            "-fx-border-color: rgba(86,74,181,0.38); -fx-border-radius: 14; " +
+            "-fx-effect: dropshadow(gaussian,rgba(86,74,181,0.18),14,0,0,5);"));
+        card.setOnMouseExited(ev -> card.setStyle(
+            "-fx-background-color: #1E1A2E; -fx-background-radius: 14; " +
+            "-fx-border-color: rgba(86,74,181,0.2); -fx-border-radius: 14; " +
+            "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.3),10,0,0,4);"));
+        return card;
+    }
+
+    /** Crea el badge de color según el estado del pedido. */
+    private Label crearBadgeEstado(String estadoTexto) {
+        String upper = estadoTexto.toUpperCase();
+        String color, bg, texto;
+        if (upper.contains("ENTREGADO") || upper.contains("COMPLETADO")) {
+            color = "#10b981"; bg = "rgba(16,185,129,0.14)"; texto = "✓  Entregado";
+        } else if (upper.contains("CAMINO") || upper.contains("ENVIADO")) {
+            color = "#f59e0b"; bg = "rgba(245,158,11,0.14)"; texto = "🚚  En camino";
+        } else if (upper.contains("PREPARACION") || upper.contains("PREPARACIÓN")) {
+            color = "#8b7cf8"; bg = "rgba(139,124,248,0.14)"; texto = "⚙  En preparación";
+        } else if (upper.contains("CANCELADO")) {
+            color = "#FF6B6B"; bg = "rgba(255,107,107,0.14)"; texto = "✕  Cancelado";
+        } else {
+            color = "#A99CF0"; bg = "rgba(86,74,181,0.14)"; texto = "📋  Confirmado";
+        }
+        Label badge = new Label(texto);
+        badge.setStyle("-fx-background-color: " + bg + "; -fx-background-radius: 20; " +
+            "-fx-border-color: " + color + "44" + "; -fx-border-radius: 20; " +
+            "-fx-text-fill: " + color + "; -fx-font-size: 11px; -fx-font-weight: bold; " +
+            "-fx-padding: 4 12 4 12;");
+        return badge;
+    }
+
+    /**
+     * Construye el timeline visual de 4 pasos:
+     * Confirmado → En preparación → En camino → Entregado
+     */
+    private HBox crearTimeline(String estadoTexto) {
+        String upper = estadoTexto.toUpperCase();
+        int pasoActual = 0;
+        if (upper.contains("PREPARACION") || upper.contains("PREPARACIÓN")) pasoActual = 1;
+        else if (upper.contains("CAMINO") || upper.contains("ENVIADO"))     pasoActual = 2;
+        else if (upper.contains("ENTREGADO") || upper.contains("COMPLETADO")) pasoActual = 3;
+
+        HBox timeline = new HBox(0);
+        timeline.setAlignment(Pos.CENTER_LEFT);
+
+        String[] pasos   = {"Confirmado", "Preparación", "En camino", "Entregado"};
+        String[] iconos  = {"📋",          "⚙",            "🚚",         "✓"};
+        boolean cancelado = upper.contains("CANCELADO");
+
+        for (int i = 0; i < pasos.length; i++) {
+            // Paso
+            VBox paso = new VBox(4);
+            paso.setAlignment(Pos.CENTER);
+            paso.setMinWidth(70);
+
+            boolean hecho   = !cancelado && i <= pasoActual;
+            boolean actual  = !cancelado && i == pasoActual;
+            String color    = cancelado ? "#4a4760" : (hecho ? "#A99CF0" : "#3d3a55");
+            String colorTxt = cancelado ? "#4a4760" : (hecho ? "#A99CF0" : "#4a4760");
+
+            // Círculo del paso
+            StackPane circulo = new StackPane();
+            circulo.setPrefSize(28, 28); circulo.setMinSize(28, 28);
+            javafx.scene.shape.Circle bg = new javafx.scene.shape.Circle(14);
+            bg.setFill(javafx.scene.paint.Color.web(
+                cancelado ? "#2a2840" : (hecho ? "rgba(86,74,181,0.25)" : "rgba(60,56,80,0.4)")));
+            bg.setStroke(javafx.scene.paint.Color.web(
+                cancelado ? "#3a3758" : (hecho ? "#564AB5" : "#3a3757")));
+            bg.setStrokeWidth(actual ? 2.0 : 1.5);
+            Label iconoLbl = new Label(hecho ? iconos[i] : String.valueOf(i + 1));
+            iconoLbl.setStyle("-fx-font-size: " + (hecho ? "12" : "10") + "px; " +
+                "-fx-text-fill: " + (hecho ? "#A99CF0" : "#5a5775") + ";");
+            circulo.getChildren().addAll(bg, iconoLbl);
+
+            Label txtPaso = new Label(pasos[i]);
+            txtPaso.setStyle("-fx-font-size: 10px; -fx-text-fill: " + colorTxt + "; " +
+                "-fx-font-weight: " + (actual ? "bold" : "normal") + ";");
+
+            paso.getChildren().addAll(circulo, txtPaso);
+            timeline.getChildren().add(paso);
+
+            // Línea conectora (excepto después del último paso)
+            if (i < pasos.length - 1) {
+                Region linea = new Region();
+                linea.setPrefHeight(2); linea.setPrefWidth(Double.MAX_VALUE);
+                HBox.setHgrow(linea, Priority.ALWAYS);
+                String lineaColor = (!cancelado && i < pasoActual) ? "#564AB5" : "#2e2c42";
+                linea.setStyle("-fx-background-color: " + lineaColor + "; -fx-background-radius: 2;");
+                linea.setTranslateY(-10); // alinear verticalmente con el círculo
+                timeline.getChildren().add(linea);
+            }
+        }
+
+        // Si está cancelado, añadir label
+        if (cancelado) {
+            Region sp = new Region(); HBox.setHgrow(sp, Priority.ALWAYS);
+            Label lc = new Label("✕  Cancelado");
+            lc.setStyle("-fx-font-size: 11px; -fx-text-fill: #FF6B6B; -fx-font-weight: bold;");
+            // Insertar al inicio del timeline
+            timeline.getChildren().add(0, sp);
+            timeline.getChildren().add(0, lc);
+        }
+
+        return timeline;
+    }
+
+    /** Obtiene la dirección del pedido de forma segura. */
+    private String obtenerDireccionPedido(Pedido pedido) {
+        try {
+            Object dir = pedido.getClass().getMethod("getDireccion").invoke(pedido);
+            if (dir != null && !dir.toString().isBlank()) return dir.toString();
+        } catch (Exception ignored) {}
+        return "Dirección por definir";
+    }
+
+    /** Agrega los ítems de un pedido anterior al carrito (reordenar). */
+    private void reordenarPedido(List<ItemCarrito> items) {
+        if (items == null || items.isEmpty()) {
+            mostrarToast("⚠ Este pedido no tiene productos para reordenar.");
+            return;
+        }
+        for (ItemCarrito it : items)
+            carrito.agregar(new ItemCarrito(it.getProducto(), it.getVariante(), it.getCantidad()));
+        actualizarVistaCarrito();
+        mostrarToast("🛒 " + items.size() + " producto(s) añadidos al carrito.");
+        navegarCarrito();
     }
 
     // ══════════════════════════════════════════════════════════════════════════
