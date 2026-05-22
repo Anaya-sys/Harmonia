@@ -107,7 +107,7 @@ public class DashboardController {
     @FXML private Label lblDeseosVacio;
     @FXML private VBox  deseosItemsContainer;
 
-    // ── PERFIL ─────────────────────────────────────────────────────────────────
+   
     @FXML private Label     lblPerfilInitial;
     @FXML private Label     lblPerfilNombre;
     @FXML private Label     lblPerfilEmail;
@@ -132,10 +132,10 @@ public class DashboardController {
     private String  busqueda    = "";
     private boolean modoEdicion = false;
 
-    // ── PANEL DETALLE (creado dinámicamente, overlay sobre el contenido) ───────
-    private StackPane rootStackPane;   // referencia al StackPane raíz del FXML
-    private ScrollPane paneDetalle;    // panel detalle generado en código
-    private Producto   productoActual; // producto que se está visualizando
+   
+    private StackPane rootStackPane;   
+    private ScrollPane paneDetalle;    
+    private Producto   productoActual; 
 
     // ── MAPA DE IMÁGENES ───────────────────────────────────────────────────────
     private static final java.util.Map<Integer, String> IMG_PRODUCTO = new java.util.HashMap<>();

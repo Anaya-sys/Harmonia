@@ -2,3 +2,4 @@
 2|Laura Admin|laura@harmonia.com|admin456|PRODUCTOR|Piano|8000.0|ADMIN
 3|Juan Pérez|juan@gmail.com|juan123|ESTUDIANTE|Batería|1500.0|COMPRADOR
 4|Carlos Gabriel Anaya Arrieta|cganaya@gmail.com|123456|ESTUDIANTE|Sin definir|0.0|COMPRADOR
+5|juanelperro|p@gmail.com|123456|ESTUDIANTE|Sin definir|0.0|COMPRADOR
