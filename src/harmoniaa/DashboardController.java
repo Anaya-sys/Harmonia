@@ -1562,8 +1562,21 @@ private void cerrarDetalle() {
         fila.setPadding(new Insets(14, 16, 14, 16));
         fila.setStyle("-fx-background-color: #1E1A2E; -fx-background-radius: 10; " +
             "-fx-border-color: rgba(86,74,181,0.18); -fx-border-radius: 10;");
-        Label emoji = new Label(getEmojiCategoria(item.getProducto().getIdCategoria()));
-        emoji.setStyle("-fx-font-size: 28px;");
+        // Imagen del producto (fallback: emoji de categoría)
+        StackPane imgBox = new StackPane();
+        imgBox.setPrefSize(52, 52); imgBox.setMinSize(52, 52); imgBox.setMaxSize(52, 52);
+        imgBox.setStyle("-fx-background-color: #13111e; -fx-background-radius: 8;");
+        ImageView iv = cargarImagenProducto(item.getProducto(), 52, 52);
+        if (iv != null) {
+            Rectangle clip = new Rectangle(52, 52);
+            clip.setArcWidth(16); clip.setArcHeight(16);
+            imgBox.setClip(clip);
+            imgBox.getChildren().add(iv);
+        } else {
+            Label emoji = new Label(getEmojiCategoria(item.getProducto().getIdCategoria()));
+            emoji.setStyle("-fx-font-size: 24px;");
+            imgBox.getChildren().add(emoji);
+        }
         VBox info = new VBox(4); HBox.setHgrow(info, Priority.ALWAYS);
         Label nombre = new Label(item.getProducto().getNombre());
         nombre.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
@@ -1578,7 +1591,7 @@ private void cerrarDetalle() {
             "-fx-text-fill: #FF6B6B; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 4 8 4 8;");
         int idVar = item.getVariante() != null ? item.getVariante().getId() : -1;
         btnQ.setOnAction(e -> { carrito.quitar(item.getProducto().getId(), idVar); actualizarVistaCarrito(); });
-        fila.getChildren().addAll(emoji, info, subtotal, btnQ);
+        fila.getChildren().addAll(imgBox, info, subtotal, btnQ);
         return fila;
     }
 
@@ -1775,8 +1788,21 @@ private void cerrarDetalle() {
             HBox fila = new HBox(10);
             fila.setAlignment(Pos.CENTER_LEFT);
 
-            Label emojiProd = new Label(getEmojiCategoria(it.getProducto().getIdCategoria()));
-            emojiProd.setStyle("-fx-font-size: 18px; -fx-min-width: 28;");
+            // Imagen del producto (fallback: emoji de categoría)
+            StackPane imgBox = new StackPane();
+            imgBox.setPrefSize(40, 40); imgBox.setMinSize(40, 40); imgBox.setMaxSize(40, 40);
+            imgBox.setStyle("-fx-background-color: #13111e; -fx-background-radius: 6;");
+            ImageView ivItem = cargarImagenProducto(it.getProducto(), 40, 40);
+            if (ivItem != null) {
+                Rectangle clip = new Rectangle(40, 40);
+                clip.setArcWidth(12); clip.setArcHeight(12);
+                imgBox.setClip(clip);
+                imgBox.getChildren().add(ivItem);
+            } else {
+                Label emojiProd = new Label(getEmojiCategoria(it.getProducto().getIdCategoria()));
+                emojiProd.setStyle("-fx-font-size: 18px; -fx-min-width: 28;");
+                imgBox.getChildren().add(emojiProd);
+            }
 
             VBox infoItem = new VBox(1); HBox.setHgrow(infoItem, Priority.ALWAYS);
             Label nomItem = new Label(it.getProducto().getNombre());
@@ -1789,7 +1815,7 @@ private void cerrarDetalle() {
             Label subItem = new Label("$" + String.format("%,.0f", it.calcularSubtotal()));
             subItem.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #A99CF0;");
 
-            fila.getChildren().addAll(emojiProd, infoItem, subItem);
+            fila.getChildren().addAll(imgBox, infoItem, subItem);
             listaItems.getChildren().add(fila);
         }
         if (items.size() > 2) {
@@ -1988,8 +2014,21 @@ private void cerrarDetalle() {
         fila.setPadding(new Insets(14, 16, 14, 16));
         fila.setStyle("-fx-background-color: #1E1A2E; -fx-background-radius: 10; " +
             "-fx-border-color: rgba(188,127,21,0.2); -fx-border-radius: 10;");
-        Label emoji = new Label(getEmojiCategoria(p.getIdCategoria()));
-        emoji.setStyle("-fx-font-size: 28px;");
+        // Imagen del producto (fallback: emoji de categoría)
+        StackPane imgBox = new StackPane();
+        imgBox.setPrefSize(52, 52); imgBox.setMinSize(52, 52); imgBox.setMaxSize(52, 52);
+        imgBox.setStyle("-fx-background-color: #13111e; -fx-background-radius: 8;");
+        ImageView iv = cargarImagenProducto(p, 52, 52);
+        if (iv != null) {
+            Rectangle clip = new Rectangle(52, 52);
+            clip.setArcWidth(16); clip.setArcHeight(16);
+            imgBox.setClip(clip);
+            imgBox.getChildren().add(iv);
+        } else {
+            Label emoji = new Label(getEmojiCategoria(p.getIdCategoria()));
+            emoji.setStyle("-fx-font-size: 24px;");
+            imgBox.getChildren().add(emoji);
+        }
         VBox info = new VBox(4); HBox.setHgrow(info, Priority.ALWAYS);
         Label nombre = new Label(p.getNombre());
         nombre.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
@@ -2010,7 +2049,7 @@ private void cerrarDetalle() {
         btnQ.setStyle("-fx-background-color: rgba(255,107,107,0.1); -fx-background-radius: 6; " +
             "-fx-text-fill: #FF6B6B; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 4 8 4 8;");
         btnQ.setOnAction(e -> { deseos.quitar(p.getId()); actualizarVistaDeseos(); });
-        fila.getChildren().addAll(emoji, info, precio, btnMover, btnQ);
+        fila.getChildren().addAll(imgBox, info, precio, btnMover, btnQ);
         return fila;
     }
 
