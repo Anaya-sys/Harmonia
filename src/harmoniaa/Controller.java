@@ -165,16 +165,22 @@ public class Controller {
 
  
     private void navegarAlDashboard() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("dashboard.fxml"));
-            Parent root = loader.load();
-            Stage stage = (Stage) authActionButton.getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.setTitle("Harmonia – Dashboard");
-        } catch (Exception e) {
-            mostrarFeedback("⚠  Error al cargar el dashboard.", FEEDBACK_ERROR);
-            e.printStackTrace();
-        }
+       try {
+        Usuario activo = UserStore.getUsuarioActivo();
+        boolean esAdmin = activo != null && activo.getRol() == Rol.ADMIN;
+
+        String fxmlArchivo = esAdmin ? "dashboardAdmin.fxml" : "dashboard.fxml";
+        String titulo      = esAdmin ? "Harmonia – Administración" : "Harmonia – Dashboard";
+
+        FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlArchivo));
+        Parent root = loader.load();
+        Stage stage = (Stage) authActionButton.getScene().getWindow();
+        stage.setScene(new Scene(root));
+        stage.setTitle(titulo);
+    } catch (Exception e) {
+        mostrarFeedback("⚠  Error al cargar el dashboard.", FEEDBACK_ERROR);
+        e.printStackTrace();
+    }
     }
  
     

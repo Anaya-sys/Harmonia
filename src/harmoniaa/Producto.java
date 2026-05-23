@@ -3,14 +3,14 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package harmoniaa;
-
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
  *
  * @author CARLOS ANAYA
  */
-public class Producto {
+public class Producto implements Serializable {
     private int id;
     private String nombre;
     private String descripcion;

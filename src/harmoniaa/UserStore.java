@@ -7,6 +7,8 @@ import java.util.List;
 
 public class UserStore {
 
+    
+    
     private static final List<Usuario> usuarios = new ArrayList<>();
     private static Usuario usuarioActivo = null;
 
@@ -17,7 +19,7 @@ public class UserStore {
     // ── ZONA 1: bloque estático — primero carga el archivo, si no hay nada usa defaults ──
     static {
         cargarDesdeArchivo();
-
+        System.out.println(new File(ARCHIVO).getAbsolutePath());
         // Si el archivo no existía o estaba vacío, cargamos los usuarios por defecto
         if (usuarios.isEmpty()) {
             usuarios.add(new Usuario(
@@ -40,6 +42,9 @@ public class UserStore {
         }
     }
 
+    
+    
+    
     // ── ZONA 2: lógica de archivo (nueva) ─────────────────────────────────────
 
     /**
@@ -141,4 +146,6 @@ public class UserStore {
         EMAIL_NO_EXISTE,
         CONTRASENA_INCORRECTA
     }
+    
+    
 }

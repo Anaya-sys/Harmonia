@@ -1,0 +1,4 @@
+# id|idUsuario|estado|fechaCreacion|total|direccionEnvio
+1|4|ENTREGADO|2026-05-23|18598000.00|Dirección por definir
+2|4|ENTREGADO|2026-05-23|24494000.00|Dirección por definir
+3|4|ENTREGADO|2026-05-23|10499000.00|Dirección por definir

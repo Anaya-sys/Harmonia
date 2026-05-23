@@ -1,0 +1,926 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+
+<!--
+    ══════════════════════════════════════════════════════════════════════
+    dashboardAdmin.fxml  ·  Panel de Administración — Harmonia
+    Controlador: harmoniaa.DashboardAdminController
+
+    ESTRUCTURA
+    ──────────
+    BorderPane
+      left  → Sidebar colapsable (68 ↔ 230 px, animado por hover)
+      center→ StackPane con 5 panes:
+               paneOverview    (default, visible)
+               panePedidosAdmin
+               paneCatalogoAdmin (placeholder)
+               paneUsuariosAdmin (placeholder)
+               panePerfilAdmin
+    ══════════════════════════════════════════════════════════════════════
+-->
+<BorderPane
+    fx:controller="harmoniaa.DashboardAdminController"
+    prefHeight="720.0" prefWidth="1280.0"
+    minHeight="620.0" minWidth="920.0"
+    style="-fx-background-color: #151221;"
+    xmlns="http://javafx.com/javafx/26"
+    xmlns:fx="http://javafx.com/fxml/1">
+
+    <!-- ══════════════════════════════════════════════════════
+         SIDEBAR  ·  Colapsable: 68 px → 230 px
+         ══════════════════════════════════════════════════════ -->
+    <left>
+        <VBox fx:id="sidebar"
+              prefWidth="68.0"
+              onMouseEntered="#handleSidebarEntered"
+              onMouseExited="#handleSidebarExited"
+              style="-fx-background-color: #1E1A2E;
+                     -fx-border-color: rgba(86,74,181,0.25);
+                     -fx-border-width: 0 1 0 0;">
+
+            <!-- ── LOGO ── -->
+            <HBox fx:id="logoBox" alignment="CENTER"
+                  style="-fx-padding: 16 12 16 12;
+                         -fx-background-color: #120F1E;">
+                <ImageView fx:id="logoIcono"
+                           fitWidth="38.0" fitHeight="38.0"
+                           preserveRatio="true" pickOnBounds="true">
+                    <image><Image url="@logoicono.png"/></image>
+                </ImageView>
+                <ImageView fx:id="logoCompleto"
+                           fitWidth="150.0" fitHeight="44.0"
+                           preserveRatio="true" pickOnBounds="true"
+                           visible="false" managed="false">
+                    <image><Image url="@logo.png"/></image>
+                </ImageView>
+            </HBox>
+
+            <!-- ── BADGE ADMIN ── visible solo expandido -->
+            <HBox fx:id="adminBadgeBox" alignment="CENTER"
+                  visible="false" managed="false"
+                  style="-fx-padding: 6 12 6 12;
+                         -fx-background-color: rgba(188,127,21,0.08);
+                         -fx-border-color: rgba(188,127,21,0.18);
+                         -fx-border-width: 1 0 1 0;">
+                <Label text="⚙  Panel de Administración"
+                       style="-fx-font-size: 10px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: #BC7F15;"/>
+            </HBox>
+
+            <Separator style="-fx-background-color: rgba(86,74,181,0.2);
+                              -fx-border-color: transparent;"/>
+
+            <!-- ── NAV ITEMS ── -->
+            <VBox fx:id="navContainer" spacing="6"
+                  style="-fx-padding: 14 8 14 8;"
+                  VBox.vgrow="ALWAYS">
+
+                <!-- Dashboard / Overview -->
+                <Button fx:id="navBtnDashboard"
+                        text="📊"
+                        maxWidth="99999"
+                        alignment="CENTER_LEFT"
+                        prefHeight="50.0"
+                        mnemonicParsing="false"
+                        onAction="#navegarDashboard"
+                        style="-fx-background-color: #564AB5;
+                               -fx-background-radius: 12;
+                               -fx-text-fill: white;
+                               -fx-font-size: 15px;
+                               -fx-font-weight: bold;
+                               -fx-cursor: hand;
+                               -fx-padding: 0 12 0 14;"/>
+
+                <!-- Pedidos -->
+                <Button fx:id="navBtnPedidos"
+                        text="📦"
+                        maxWidth="99999"
+                        alignment="CENTER_LEFT"
+                        prefHeight="50.0"
+                        mnemonicParsing="false"
+                        onAction="#navegarPedidosAdmin"
+                        style="-fx-background-color: transparent;
+                               -fx-background-radius: 12;
+                               -fx-text-fill: #8F8AA8;
+                               -fx-font-size: 15px;
+                               -fx-cursor: hand;
+                               -fx-padding: 0 12 0 14;"/>
+
+                <!-- Catálogo (placeholder) -->
+                <Button fx:id="navBtnCatalogo"
+                        text="🏷️"
+                        maxWidth="99999"
+                        alignment="CENTER_LEFT"
+                        prefHeight="50.0"
+                        mnemonicParsing="false"
+                        onAction="#navegarCatalogoAdmin"
+                        style="-fx-background-color: transparent;
+                               -fx-background-radius: 12;
+                               -fx-text-fill: #8F8AA8;
+                               -fx-font-size: 15px;
+                               -fx-cursor: hand;
+                               -fx-padding: 0 12 0 14;"/>
+
+                <!-- Usuarios (placeholder) -->
+                <Button fx:id="navBtnUsuarios"
+                        text="👥"
+                        maxWidth="99999"
+                        alignment="CENTER_LEFT"
+                        prefHeight="50.0"
+                        mnemonicParsing="false"
+                        onAction="#navegarUsuariosAdmin"
+                        style="-fx-background-color: transparent;
+                               -fx-background-radius: 12;
+                               -fx-text-fill: #8F8AA8;
+                               -fx-font-size: 15px;
+                               -fx-cursor: hand;
+                               -fx-padding: 0 12 0 14;"/>
+
+                <!-- Perfil del admin -->
+                <Button fx:id="navBtnPerfil"
+                        text="👤"
+                        maxWidth="99999"
+                        alignment="CENTER_LEFT"
+                        prefHeight="50.0"
+                        mnemonicParsing="false"
+                        onAction="#navegarPerfilAdmin"
+                        style="-fx-background-color: transparent;
+                               -fx-background-radius: 12;
+                               -fx-text-fill: #8F8AA8;
+                               -fx-font-size: 15px;
+                               -fx-cursor: hand;
+                               -fx-padding: 0 12 0 14;"/>
+
+            </VBox>
+
+            <!-- ── INFO USUARIO (bottom) ── -->
+            <HBox fx:id="userInfoBox" alignment="CENTER_LEFT" spacing="10"
+                  style="-fx-padding: 14 10 18 12;
+                         -fx-border-color: rgba(86,74,181,0.2);
+                         -fx-border-width: 1 0 0 0;">
+
+                <StackPane prefWidth="42.0" prefHeight="42.0">
+                    <Circle radius="21.0" fill="#272239"
+                            stroke="#BC7F15" strokeWidth="2.0"/>
+                    <Label fx:id="lblAvatarInitial" text="A"
+                           style="-fx-font-size: 16px;
+                                  -fx-font-weight: bold;
+                                  -fx-text-fill: #BC7F15;"/>
+                </StackPane>
+
+                <VBox fx:id="userTextBox" spacing="2"
+                      HBox.hgrow="ALWAYS"
+                      visible="false" managed="false">
+                    <Label fx:id="lblSidebarNombre" text="Admin"
+                           style="-fx-font-size: 13px;
+                                  -fx-font-weight: bold;
+                                  -fx-text-fill: #E9E9ED;"/>
+                    <Label fx:id="lblSidebarRol" text="ADMINISTRADOR"
+                           style="-fx-font-size: 10px;
+                                  -fx-text-fill: #BC7F15;
+                                  -fx-font-weight: bold;"/>
+                </VBox>
+
+                <Button fx:id="btnLogout"
+                        text="⇠"
+                        prefWidth="34.0" prefHeight="34.0"
+                        mnemonicParsing="false"
+                        onAction="#handleLogout"
+                        visible="false" managed="false"
+                        style="-fx-background-color: rgba(255,107,107,0.12);
+                               -fx-background-radius: 8;
+                               -fx-text-fill: #FF6B6B;
+                               -fx-font-size: 15px;
+                               -fx-cursor: hand;
+                               -fx-border-color: rgba(255,107,107,0.2);
+                               -fx-border-radius: 8;"/>
+            </HBox>
+        </VBox>
+    </left>
+
+    <!-- ══════════════════════════════════════════════════════
+         ÁREA CENTRAL  ·  StackPane dinámico
+         ══════════════════════════════════════════════════════ -->
+    <center>
+        <StackPane fx:id="contentArea"
+                   style="-fx-background-color: #151221;">
+
+            <!-- ═══════════════════════════════════════════════
+                 PANE 1: OVERVIEW / DASHBOARD
+                 (visible por defecto)
+                 ═══════════════════════════════════════════════ -->
+            <ScrollPane fx:id="paneOverview"
+                        fitToWidth="true"
+                        hbarPolicy="NEVER"
+                        style="-fx-background-color: transparent;
+                               -fx-background: transparent;
+                               -fx-border-color: transparent;">
+                <VBox spacing="0"
+                      style="-fx-background-color: #151221;">
+
+                    <!-- ── HEADER ── -->
+                    <HBox alignment="CENTER_LEFT" spacing="16"
+                          style="-fx-padding: 28 32 20 32;
+                                 -fx-border-color: rgba(86,74,181,0.1);
+                                 -fx-border-width: 0 0 1 0;">
+                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                            <Label text="Panel de Administración"
+                                   style="-fx-font-size: 26px;
+                                          -fx-font-weight: bold;
+                                          -fx-text-fill: #E9E9ED;"/>
+                            <Label fx:id="lblSubtituloDashboard"
+                                   text="Resumen general del sistema"
+                                   style="-fx-font-size: 13px;
+                                          -fx-text-fill: #8F8AA8;"/>
+                        </VBox>
+                        <!-- Botón Refrescar -->
+                        <Button fx:id="btnRefrescarOverview"
+                                text="↻  Actualizar"
+                                mnemonicParsing="false"
+                                onAction="#handleRefrescar"
+                                style="-fx-background-color: rgba(86,74,181,0.15);
+                                       -fx-background-radius: 10;
+                                       -fx-border-color: rgba(86,74,181,0.35);
+                                       -fx-border-radius: 10;
+                                       -fx-text-fill: #A99CF0;
+                                       -fx-font-size: 12px;
+                                       -fx-cursor: hand;
+                                       -fx-padding: 10 18 10 18;"/>
+                        <!-- Procesar siguiente rápido -->
+                        <Button fx:id="btnProcesarSiguienteOv"
+                                text="⚡  Procesar siguiente"
+                                mnemonicParsing="false"
+                                onAction="#handleProcesarSiguiente"
+                                style="-fx-background-color: #BC7F15;
+                                       -fx-background-radius: 10;
+                                       -fx-text-fill: white;
+                                       -fx-font-size: 12px;
+                                       -fx-font-weight: bold;
+                                       -fx-cursor: hand;
+                                       -fx-padding: 10 18 10 18;
+                                       -fx-effect: dropshadow(gaussian,rgba(188,127,21,0.4),14,0,0,4);"/>
+                    </HBox>
+
+                    <!-- ── TOAST ── -->
+                    <Label fx:id="lblToastAdmin"
+                           text=""
+                           maxWidth="99999"
+                           style="-fx-font-size: 13px;
+                                  -fx-text-fill: #A99CF0;
+                                  -fx-background-color: rgba(86,74,181,0.12);
+                                  -fx-padding: 10 32 10 32;
+                                  -fx-border-color: transparent;
+                                  -fx-border-width: 0 0 1 0;"
+                           visible="false" managed="false"/>
+
+                    <!-- ── STAT CARDS ── -->
+                    <HBox spacing="18"
+                          style="-fx-padding: 28 32 0 32;">
+
+                        <!-- Card: Total Pedidos -->
+                        <VBox spacing="10" HBox.hgrow="ALWAYS"
+                              style="-fx-background-color: #1E1A2E;
+                                     -fx-background-radius: 16;
+                                     -fx-border-color: rgba(86,74,181,0.3);
+                                     -fx-border-radius: 16;
+                                     -fx-padding: 22 24 22 24;
+                                     -fx-effect: dropshadow(gaussian,rgba(86,74,181,0.15),12,0,0,4);">
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label text="📦"
+                                       style="-fx-font-size: 24px;
+                                              -fx-background-color: rgba(86,74,181,0.18);
+                                              -fx-background-radius: 10;
+                                              -fx-padding: 8 10 8 10;"/>
+                                <VBox spacing="2" HBox.hgrow="ALWAYS">
+                                    <Label text="Total Pedidos"
+                                           style="-fx-font-size: 11px;
+                                                  -fx-text-fill: #8F8AA8;
+                                                  -fx-font-weight: bold;"/>
+                                    <Label fx:id="lblTotalPedidos" text="0"
+                                           style="-fx-font-size: 30px;
+                                                  -fx-font-weight: bold;
+                                                  -fx-text-fill: #E9E9ED;"/>
+                                </VBox>
+                            </HBox>
+                            <Label fx:id="lblTotalPedidosHint"
+                                   text="pedidos registrados"
+                                   style="-fx-font-size: 11px; -fx-text-fill: #564AB5;"/>
+                        </VBox>
+
+                        <!-- Card: En Cola (Pendientes) -->
+                        <VBox spacing="10" HBox.hgrow="ALWAYS"
+                              style="-fx-background-color: #1E1A2E;
+                                     -fx-background-radius: 16;
+                                     -fx-border-color: rgba(188,127,21,0.3);
+                                     -fx-border-radius: 16;
+                                     -fx-padding: 22 24 22 24;
+                                     -fx-effect: dropshadow(gaussian,rgba(188,127,21,0.1),12,0,0,4);">
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label text="⏳"
+                                       style="-fx-font-size: 24px;
+                                              -fx-background-color: rgba(188,127,21,0.18);
+                                              -fx-background-radius: 10;
+                                              -fx-padding: 8 10 8 10;"/>
+                                <VBox spacing="2" HBox.hgrow="ALWAYS">
+                                    <Label text="En Cola"
+                                           style="-fx-font-size: 11px;
+                                                  -fx-text-fill: #8F8AA8;
+                                                  -fx-font-weight: bold;"/>
+                                    <Label fx:id="lblEnCola" text="0"
+                                           style="-fx-font-size: 30px;
+                                                  -fx-font-weight: bold;
+                                                  -fx-text-fill: #E9E9ED;"/>
+                                </VBox>
+                            </HBox>
+                            <Label fx:id="lblEnColaHint"
+                                   text="pendientes de procesar"
+                                   style="-fx-font-size: 11px; -fx-text-fill: #BC7F15;"/>
+                        </VBox>
+
+                        <!-- Card: Ingresos -->
+                        <VBox spacing="10" HBox.hgrow="ALWAYS"
+                              style="-fx-background-color: #1E1A2E;
+                                     -fx-background-radius: 16;
+                                     -fx-border-color: rgba(16,185,129,0.3);
+                                     -fx-border-radius: 16;
+                                     -fx-padding: 22 24 22 24;
+                                     -fx-effect: dropshadow(gaussian,rgba(16,185,129,0.1),12,0,0,4);">
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label text="💰"
+                                       style="-fx-font-size: 24px;
+                                              -fx-background-color: rgba(16,185,129,0.15);
+                                              -fx-background-radius: 10;
+                                              -fx-padding: 8 10 8 10;"/>
+                                <VBox spacing="2" HBox.hgrow="ALWAYS">
+                                    <Label text="Ingresos Totales"
+                                           style="-fx-font-size: 11px;
+                                                  -fx-text-fill: #8F8AA8;
+                                                  -fx-font-weight: bold;"/>
+                                    <Label fx:id="lblIngresos" text="\$0"
+                                           style="-fx-font-size: 22px;
+                                                  -fx-font-weight: bold;
+                                                  -fx-text-fill: #E9E9ED;"/>
+                                </VBox>
+                            </HBox>
+                            <Label fx:id="lblIngresosHint"
+                                   text="suma de todos los pedidos"
+                                   style="-fx-font-size: 11px; -fx-text-fill: #10b981;"/>
+                        </VBox>
+
+                        <!-- Card: Entregados -->
+                        <VBox spacing="10" HBox.hgrow="ALWAYS"
+                              style="-fx-background-color: #1E1A2E;
+                                     -fx-background-radius: 16;
+                                     -fx-border-color: rgba(59,130,246,0.3);
+                                     -fx-border-radius: 16;
+                                     -fx-padding: 22 24 22 24;
+                                     -fx-effect: dropshadow(gaussian,rgba(59,130,246,0.1),12,0,0,4);">
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label text="✅"
+                                       style="-fx-font-size: 24px;
+                                              -fx-background-color: rgba(59,130,246,0.15);
+                                              -fx-background-radius: 10;
+                                              -fx-padding: 8 10 8 10;"/>
+                                <VBox spacing="2" HBox.hgrow="ALWAYS">
+                                    <Label text="Entregados"
+                                           style="-fx-font-size: 11px;
+                                                  -fx-text-fill: #8F8AA8;
+                                                  -fx-font-weight: bold;"/>
+                                    <Label fx:id="lblEntregados" text="0"
+                                           style="-fx-font-size: 30px;
+                                                  -fx-font-weight: bold;
+                                                  -fx-text-fill: #E9E9ED;"/>
+                                </VBox>
+                            </HBox>
+                            <Label fx:id="lblEntregadosHint"
+                                   text="pedidos completados"
+                                   style="-fx-font-size: 11px; -fx-text-fill: #3b82f6;"/>
+                        </VBox>
+
+                    </HBox>
+
+                    <!-- ── DOS COLUMNAS: COLA + ACCIONES ── -->
+                    <HBox spacing="18"
+                          style="-fx-padding: 22 32 0 32;"
+                          alignment="TOP_LEFT">
+
+                        <!-- Cola de Pendientes -->
+                        <VBox spacing="0" HBox.hgrow="ALWAYS"
+                              style="-fx-background-color: #1E1A2E;
+                                     -fx-background-radius: 14;
+                                     -fx-border-color: rgba(188,127,21,0.2);
+                                     -fx-border-radius: 14;">
+
+                            <HBox alignment="CENTER_LEFT" spacing="10"
+                                  style="-fx-padding: 18 20 14 20;
+                                         -fx-border-color: rgba(188,127,21,0.12);
+                                         -fx-border-width: 0 0 1 0;">
+                                <Label text="⏳  Cola de Pendientes"
+                                       style="-fx-font-size: 15px;
+                                              -fx-font-weight: bold;
+                                              -fx-text-fill: #E9E9ED;"
+                                       HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="lblColaBadge" text="0"
+                                       style="-fx-background-color: rgba(188,127,21,0.2);
+                                              -fx-background-radius: 12;
+                                              -fx-text-fill: #BC7F15;
+                                              -fx-font-size: 11px;
+                                              -fx-font-weight: bold;
+                                              -fx-padding: 3 10 3 10;"/>
+                            </HBox>
+
+                            <!-- Contenedor dinámico de la cola -->
+                            <VBox fx:id="colaContainer" spacing="0"
+                                  style="-fx-padding: 10 0 10 0;
+                                         -fx-min-height: 80;"/>
+
+                        </VBox>
+
+                        <!-- Acciones Rápidas -->
+                        <VBox spacing="12" prefWidth="280.0"
+                              style="-fx-background-color: #1E1A2E;
+                                     -fx-background-radius: 14;
+                                     -fx-border-color: rgba(86,74,181,0.2);
+                                     -fx-border-radius: 14;
+                                     -fx-padding: 18 20 20 20;">
+
+                            <Label text="⚡  Acciones Rápidas"
+                                   style="-fx-font-size: 15px;
+                                          -fx-font-weight: bold;
+                                          -fx-text-fill: #E9E9ED;
+                                          -fx-padding: 0 0 8 0;
+                                          -fx-border-color: rgba(86,74,181,0.12);
+                                          -fx-border-width: 0 0 1 0;"/>
+
+                            <Button text="⚡  Procesar Siguiente (FIFO)"
+                                    maxWidth="99999"
+                                    mnemonicParsing="false"
+                                    onAction="#handleProcesarSiguiente"
+                                    prefHeight="44.0"
+                                    style="-fx-background-color: #BC7F15;
+                                           -fx-background-radius: 10;
+                                           -fx-text-fill: white;
+                                           -fx-font-size: 13px;
+                                           -fx-font-weight: bold;
+                                           -fx-cursor: hand;
+                                           -fx-effect: dropshadow(gaussian,rgba(188,127,21,0.35),10,0,0,3);"/>
+
+                            <Button text="📦  Ver todos los pedidos"
+                                    maxWidth="99999"
+                                    mnemonicParsing="false"
+                                    onAction="#navegarPedidosAdmin"
+                                    prefHeight="44.0"
+                                    style="-fx-background-color: transparent;
+                                           -fx-background-radius: 10;
+                                           -fx-border-color: rgba(86,74,181,0.4);
+                                           -fx-border-radius: 10;
+                                           -fx-text-fill: #A99CF0;
+                                           -fx-font-size: 13px;
+                                           -fx-cursor: hand;"/>
+
+                            <Button text="🔍  Pedidos pendientes"
+                                    maxWidth="99999"
+                                    mnemonicParsing="false"
+                                    onAction="#irAPedidosPendientes"
+                                    prefHeight="44.0"
+                                    style="-fx-background-color: transparent;
+                                           -fx-background-radius: 10;
+                                           -fx-border-color: rgba(188,127,21,0.3);
+                                           -fx-border-radius: 10;
+                                           -fx-text-fill: #BC7F15;
+                                           -fx-font-size: 13px;
+                                           -fx-cursor: hand;"/>
+
+                            <!-- Divider + info estructura -->
+                            <Separator style="-fx-background-color: rgba(86,74,181,0.15);
+                                             -fx-border-color: transparent;"/>
+
+                            <VBox spacing="6"
+                                  style="-fx-background-color: rgba(86,74,181,0.07);
+                                         -fx-background-radius: 10;
+                                         -fx-padding: 12 14 12 14;">
+                                <Label text="📐  Estructuras de datos activas"
+                                       style="-fx-font-size: 11px;
+                                              -fx-font-weight: bold;
+                                              -fx-text-fill: #8F8AA8;"/>
+                                <Label text="• ArrayList  →  Registro global de pedidos"
+                                       style="-fx-font-size: 11px; -fx-text-fill: #6b6890;"/>
+                                <Label text="• LinkedList →  Cola FIFO de pendientes"
+                                       style="-fx-font-size: 11px; -fx-text-fill: #6b6890;"/>
+                            </VBox>
+
+                        </VBox>
+                    </HBox>
+
+                    <!-- ── PEDIDOS RECIENTES ── -->
+                    <VBox spacing="0"
+                          style="-fx-padding: 22 32 40 32;">
+
+                        <HBox alignment="CENTER_LEFT" spacing="12"
+                              style="-fx-padding: 0 0 14 0;">
+                            <Label text="🕓  Pedidos Recientes"
+                                   style="-fx-font-size: 18px;
+                                          -fx-font-weight: bold;
+                                          -fx-text-fill: #E9E9ED;"
+                                   HBox.hgrow="ALWAYS"/>
+                            <Button text="Ver todos →"
+                                    mnemonicParsing="false"
+                                    onAction="#navegarPedidosAdmin"
+                                    style="-fx-background-color: transparent;
+                                           -fx-text-fill: #564AB5;
+                                           -fx-font-size: 12px;
+                                           -fx-cursor: hand;"/>
+                        </HBox>
+
+                        <!-- Contenedor dinámico de pedidos recientes -->
+                        <VBox fx:id="recentContainer" spacing="10"/>
+
+                    </VBox>
+                </VBox>
+            </ScrollPane>
+
+            <!-- ═══════════════════════════════════════════════
+                 PANE 2: GESTIÓN DE PEDIDOS
+                 ═══════════════════════════════════════════════ -->
+            <ScrollPane fx:id="panePedidosAdmin"
+                        fitToWidth="true"
+                        hbarPolicy="NEVER"
+                        visible="false" managed="false"
+                        style="-fx-background-color: transparent;
+                               -fx-background: transparent;
+                               -fx-border-color: transparent;">
+                <VBox spacing="0"
+                      style="-fx-background-color: #151221;">
+
+                    <!-- ── HEADER PEDIDOS ── -->
+                    <VBox spacing="0"
+                          style="-fx-background-color: #1E1A2E;
+                                 -fx-border-color: rgba(86,74,181,0.12);
+                                 -fx-border-width: 0 0 1 0;">
+
+                        <HBox alignment="CENTER_LEFT" spacing="16"
+                              style="-fx-padding: 26 32 16 32;">
+                            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                <Label text="📦  Gestión de Pedidos"
+                                       style="-fx-font-size: 24px;
+                                              -fx-font-weight: bold;
+                                              -fx-text-fill: #E9E9ED;"/>
+                                <Label fx:id="lblPedidosSubtitulo"
+                                       text="Administra y actualiza el estado de cada pedido"
+                                       style="-fx-font-size: 12px;
+                                              -fx-text-fill: #8F8AA8;"/>
+                            </VBox>
+
+                            <!-- Buscador rápido -->
+                            <TextField fx:id="txtBuscarPedido"
+                                       promptText="🔍  Buscar por ID o usuario..."
+                                       prefWidth="240.0" prefHeight="40.0"
+                                       onKeyReleased="#handleBuscarPedido"
+                                       style="-fx-background-color: #272239;
+                                              -fx-background-radius: 20;
+                                              -fx-border-color: rgba(86,74,181,0.3);
+                                              -fx-border-radius: 20;
+                                              -fx-text-fill: #E9E9ED;
+                                              -fx-prompt-text-fill: #8F8AA8;
+                                              -fx-font-size: 12px;
+                                              -fx-padding: 0 16 0 16;"/>
+
+                            <!-- Procesar siguiente -->
+                            <Button text="⚡  Procesar siguiente"
+                                    mnemonicParsing="false"
+                                    onAction="#handleProcesarSiguiente"
+                                    prefHeight="40.0"
+                                    style="-fx-background-color: #BC7F15;
+                                           -fx-background-radius: 10;
+                                           -fx-text-fill: white;
+                                           -fx-font-size: 12px;
+                                           -fx-font-weight: bold;
+                                           -fx-cursor: hand;
+                                           -fx-padding: 0 18 0 18;
+                                           -fx-effect: dropshadow(gaussian,rgba(188,127,21,0.35),10,0,0,3);"/>
+                        </HBox>
+
+                        <!-- ── FILTER TABS ── -->
+                        <HBox spacing="0"
+                              style="-fx-padding: 0 32 0 32;
+                                     -fx-border-color: transparent transparent rgba(86,74,181,0.1) transparent;
+                                     -fx-border-width: 0 0 1 0;">
+
+                            <Button fx:id="tabAdminTodos"
+                                    text="Todos"
+                                    mnemonicParsing="false"
+                                    onAction="#filtrarPedidosAdmin"
+                                    prefHeight="40.0"
+                                    style="-fx-background-color: transparent;
+                                           -fx-background-radius: 0;
+                                           -fx-border-color: transparent transparent #564AB5 transparent;
+                                           -fx-border-width: 0 0 2 0;
+                                           -fx-text-fill: #A99CF0;
+                                           -fx-font-size: 12px;
+                                           -fx-font-weight: bold;
+                                           -fx-cursor: hand;
+                                           -fx-padding: 0 20 0 20;"/>
+
+                            <Button fx:id="tabAdminPendiente"
+                                    text="⏳  Pendiente"
+                                    mnemonicParsing="false"
+                                    onAction="#filtrarPedidosAdmin"
+                                    prefHeight="40.0"
+                                    style="-fx-background-color: transparent;
+                                           -fx-background-radius: 0;
+                                           -fx-border-color: transparent;
+                                           -fx-text-fill: #8F8AA8;
+                                           -fx-font-size: 12px;
+                                           -fx-cursor: hand;
+                                           -fx-padding: 0 20 0 20;"/>
+
+                            <Button fx:id="tabAdminEnProceso"
+                                    text="⚙  En Proceso"
+                                    mnemonicParsing="false"
+                                    onAction="#filtrarPedidosAdmin"
+                                    prefHeight="40.0"
+                                    style="-fx-background-color: transparent;
+                                           -fx-background-radius: 0;
+                                           -fx-border-color: transparent;
+                                           -fx-text-fill: #8F8AA8;
+                                           -fx-font-size: 12px;
+                                           -fx-cursor: hand;
+                                           -fx-padding: 0 20 0 20;"/>
+
+                            <Button fx:id="tabAdminEnviado"
+                                    text="🚚  Enviado"
+                                    mnemonicParsing="false"
+                                    onAction="#filtrarPedidosAdmin"
+                                    prefHeight="40.0"
+                                    style="-fx-background-color: transparent;
+                                           -fx-background-radius: 0;
+                                           -fx-border-color: transparent;
+                                           -fx-text-fill: #8F8AA8;
+                                           -fx-font-size: 12px;
+                                           -fx-cursor: hand;
+                                           -fx-padding: 0 20 0 20;"/>
+
+                            <Button fx:id="tabAdminEntregado"
+                                    text="✅  Entregado"
+                                    mnemonicParsing="false"
+                                    onAction="#filtrarPedidosAdmin"
+                                    prefHeight="40.0"
+                                    style="-fx-background-color: transparent;
+                                           -fx-background-radius: 0;
+                                           -fx-border-color: transparent;
+                                           -fx-text-fill: #8F8AA8;
+                                           -fx-font-size: 12px;
+                                           -fx-cursor: hand;
+                                           -fx-padding: 0 20 0 20;"/>
+
+                            <Region HBox.hgrow="ALWAYS"/>
+
+                            <!-- Contador de resultados -->
+                            <Label fx:id="lblContadorFiltro"
+                                   text="4 pedidos"
+                                   style="-fx-font-size: 12px;
+                                          -fx-text-fill: #6b6890;
+                                          -fx-padding: 0 0 0 0;"
+                                   VBox.vgrow="ALWAYS"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- ── LISTA DE PEDIDOS ── -->
+                    <VBox style="-fx-padding: 24 32 48 32;" spacing="16">
+
+                        <!-- Estado vacío -->
+                        <VBox fx:id="pedidosVacioAdmin"
+                              alignment="CENTER" spacing="12"
+                              visible="false" managed="false"
+                              style="-fx-padding: 80 0 80 0;">
+                            <Label text="📭"
+                                   style="-fx-font-size: 56px;"/>
+                            <Label text="No hay pedidos para este filtro"
+                                   style="-fx-font-size: 18px;
+                                          -fx-font-weight: bold;
+                                          -fx-text-fill: #E9E9ED;"/>
+                            <Label text="Cambia el filtro de arriba o espera nuevos pedidos del sistema"
+                                   style="-fx-font-size: 12px;
+                                          -fx-text-fill: #8F8AA8;
+                                          -fx-text-alignment: center;"
+                                   wrapText="true"
+                                   maxWidth="400"/>
+                        </VBox>
+
+                        <!-- Contenedor dinámico de tarjetas de pedidos admin -->
+                        <VBox fx:id="pedidosContainer" spacing="14"/>
+
+                    </VBox>
+                </VBox>
+            </ScrollPane>
+
+            <!-- ═══════════════════════════════════════════════
+                 PANE 3: CATÁLOGO (placeholder)
+                 ═══════════════════════════════════════════════ -->
+            <ScrollPane fx:id="paneCatalogoAdmin"
+                        fitToWidth="true"
+                        hbarPolicy="NEVER"
+                        visible="false" managed="false"
+                        style="-fx-background-color: transparent;
+                               -fx-background: transparent;
+                               -fx-border-color: transparent;">
+                <VBox alignment="CENTER" spacing="16"
+                      style="-fx-padding: 120 32 80 32;
+                             -fx-background-color: #151221;">
+                    <Label text="🏷️"
+                           style="-fx-font-size: 64px;"/>
+                    <Label text="Gestión de Catálogo"
+                           style="-fx-font-size: 22px;
+                                  -fx-font-weight: bold;
+                                  -fx-text-fill: #E9E9ED;"/>
+                    <Label text="Esta sección está en desarrollo. Aquí podrás agregar,\neditar y desactivar productos del catálogo."
+                           wrapText="true"
+                           maxWidth="480"
+                           style="-fx-font-size: 14px;
+                                  -fx-text-fill: #8F8AA8;
+                                  -fx-text-alignment: center;"/>
+                    <Label text="🔜  Próximamente"
+                           style="-fx-background-color: rgba(86,74,181,0.15);
+                                  -fx-background-radius: 20;
+                                  -fx-border-color: rgba(86,74,181,0.3);
+                                  -fx-border-radius: 20;
+                                  -fx-text-fill: #A99CF0;
+                                  -fx-font-size: 12px;
+                                  -fx-padding: 8 20 8 20;"/>
+                </VBox>
+            </ScrollPane>
+
+            <!-- ═══════════════════════════════════════════════
+                 PANE 4: USUARIOS (placeholder)
+                 ═══════════════════════════════════════════════ -->
+            <ScrollPane fx:id="paneUsuariosAdmin"
+                        fitToWidth="true"
+                        hbarPolicy="NEVER"
+                        visible="false" managed="false"
+                        style="-fx-background-color: transparent;
+                               -fx-background: transparent;
+                               -fx-border-color: transparent;">
+                <VBox alignment="CENTER" spacing="16"
+                      style="-fx-padding: 120 32 80 32;
+                             -fx-background-color: #151221;">
+                    <Label text="👥"
+                           style="-fx-font-size: 64px;"/>
+                    <Label text="Gestión de Usuarios"
+                           style="-fx-font-size: 22px;
+                                  -fx-font-weight: bold;
+                                  -fx-text-fill: #E9E9ED;"/>
+                    <Label text="Esta sección está en desarrollo. Aquí podrás ver,\nbloqueary gestionar las cuentas de los compradores."
+                           wrapText="true"
+                           maxWidth="480"
+                           style="-fx-font-size: 14px;
+                                  -fx-text-fill: #8F8AA8;
+                                  -fx-text-alignment: center;"/>
+                    <Label text="🔜  Próximamente"
+                           style="-fx-background-color: rgba(86,74,181,0.15);
+                                  -fx-background-radius: 20;
+                                  -fx-border-color: rgba(86,74,181,0.3);
+                                  -fx-border-radius: 20;
+                                  -fx-text-fill: #A99CF0;
+                                  -fx-font-size: 12px;
+                                  -fx-padding: 8 20 8 20;"/>
+                </VBox>
+            </ScrollPane>
+
+            <!-- ═══════════════════════════════════════════════
+                 PANE 5: PERFIL DEL ADMIN
+                 ═══════════════════════════════════════════════ -->
+            <ScrollPane fx:id="panePerfilAdmin"
+                        fitToWidth="true"
+                        hbarPolicy="NEVER"
+                        visible="false" managed="false"
+                        style="-fx-background-color: transparent;
+                               -fx-background: transparent;
+                               -fx-border-color: transparent;">
+                <VBox spacing="22"
+                      style="-fx-padding: 28 32 48 32;
+                             -fx-background-color: #151221;">
+
+                    <Label text="Mi Perfil — Administrador"
+                           style="-fx-font-size: 22px;
+                                  -fx-font-weight: bold;
+                                  -fx-text-fill: #E9E9ED;"/>
+
+                    <!-- Card info -->
+                    <HBox alignment="CENTER_LEFT" spacing="24"
+                          style="-fx-background-color: #1E1A2E;
+                                 -fx-background-radius: 16;
+                                 -fx-border-color: rgba(188,127,21,0.25);
+                                 -fx-border-radius: 16;
+                                 -fx-padding: 26 28 26 28;
+                                 -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),20,0,0,6);">
+
+                        <StackPane prefWidth="90.0" prefHeight="90.0">
+                            <Circle radius="45.0" fill="#272239"
+                                    stroke="#BC7F15" strokeWidth="2.0"/>
+                            <Label fx:id="lblPerfilInitialAdmin" text="A"
+                                   style="-fx-font-size: 30px;
+                                          -fx-font-weight: bold;
+                                          -fx-text-fill: #BC7F15;"/>
+                        </StackPane>
+
+                        <VBox spacing="8" HBox.hgrow="ALWAYS">
+                            <Label fx:id="lblPerfilNombreAdmin" text="Administrador"
+                                   style="-fx-font-size: 20px;
+                                          -fx-font-weight: bold;
+                                          -fx-text-fill: #E9E9ED;"/>
+                            <Label fx:id="lblPerfilEmailAdmin" text="admin@harmonia.com"
+                                   style="-fx-font-size: 13px;
+                                          -fx-text-fill: #8F8AA8;"/>
+                            <HBox spacing="8">
+                                <Label text="ADMINISTRADOR"
+                                       style="-fx-background-color: rgba(188,127,21,0.2);
+                                              -fx-background-radius: 20;
+                                              -fx-border-color: rgba(188,127,21,0.4);
+                                              -fx-border-radius: 20;
+                                              -fx-text-fill: #BC7F15;
+                                              -fx-font-size: 11px;
+                                              -fx-font-weight: bold;
+                                              -fx-padding: 4 12 4 12;"/>
+                                <Label text="⚙ Acceso completo"
+                                       style="-fx-background-color: rgba(86,74,181,0.15);
+                                              -fx-background-radius: 20;
+                                              -fx-border-color: rgba(86,74,181,0.3);
+                                              -fx-border-radius: 20;
+                                              -fx-text-fill: #A99CF0;
+                                              -fx-font-size: 11px;
+                                              -fx-padding: 4 12 4 12;"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Resumen de actividad -->
+                    <VBox spacing="0"
+                          style="-fx-background-color: #1E1A2E;
+                                 -fx-background-radius: 14;
+                                 -fx-border-color: rgba(86,74,181,0.2);
+                                 -fx-border-radius: 14;
+                                 -fx-padding: 20 24 20 24;">
+                        <Label text="📈  Resumen de Actividad"
+                               style="-fx-font-size: 14px;
+                                      -fx-font-weight: bold;
+                                      -fx-text-fill: #E9E9ED;
+                                      -fx-padding: 0 0 14 0;
+                                      -fx-border-color: rgba(86,74,181,0.12);
+                                      -fx-border-width: 0 0 1 0;"/>
+                        <HBox spacing="0" style="-fx-padding: 14 0 0 0;">
+                            <VBox spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+                                <Label fx:id="lblResumenTotal"   text="0"
+                                       style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #A99CF0;"/>
+                                <Label text="Total pedidos"
+                                       style="-fx-font-size: 11px; -fx-text-fill: #6b6890;"/>
+                            </VBox>
+                            <VBox spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+                                <Label fx:id="lblResumenCola"    text="0"
+                                       style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #BC7F15;"/>
+                                <Label text="En cola"
+                                       style="-fx-font-size: 11px; -fx-text-fill: #6b6890;"/>
+                            </VBox>
+                            <VBox spacing="4" alignment="CENTER" HBox.hgrow="ALWAYS">
+                                <Label fx:id="lblResumenEntregados" text="0"
+                                       style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #10b981;"/>
+                                <Label text="Entregados"
+                                       style="-fx-font-size: 11px; -fx-text-fill: #6b6890;"/>
+                            </VBox>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Logout -->
+                    <HBox>
+                        <Button text="⇠  Cerrar sesión"
+                                mnemonicParsing="false"
+                                onAction="#handleLogout"
+                                style="-fx-background-color: rgba(255,107,107,0.1);
+                                       -fx-background-radius: 10;
+                                       -fx-border-color: rgba(255,107,107,0.3);
+                                       -fx-border-radius: 10;
+                                       -fx-text-fill: #FF6B6B;
+                                       -fx-font-size: 13px;
+                                       -fx-cursor: hand;
+                                       -fx-padding: 12 24 12 24;"/>
+                    </HBox>
+                </VBox>
+            </ScrollPane>
+
+        </StackPane>
+    </center>
+
+</BorderPane>

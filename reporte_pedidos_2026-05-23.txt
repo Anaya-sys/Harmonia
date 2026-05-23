@@ -1,0 +1,61 @@
+══════════════════════════════════════════════════════
+  REPORTE DE PEDIDOS — Harmonia Music Store
+  Generado: 2026-05-23
+══════════════════════════════════════════════════════
+
+  Total pedidos   : 3
+  Ingreso total   : $53.591.000,00
+  En cola (FIFO)  : 0
+  Entregados      : 3
+
+  Desglose por estado:
+    PENDIENTE    → 0 pedidos  ($0,00)
+    EN_PROCESO   → 0 pedidos  ($0,00)
+    ENVIADO      → 0 pedidos  ($0,00)
+    ENTREGADO    → 3 pedidos  ($53.591.000,00)
+
+──────────────────────────────────────────────────────
+╔═══════════════════════════════════════╗
+  PEDIDO #1
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-23
+  Usuario  : #4
+  Envío a  : Dirección por definir
+  Estado   : ENTREGADO
+╠═══════════════════════════════════════╣
+  • Fender Telecaster American Pro II [3-Color Sunburst] x1 | $7200000.0 c/u | subtotal: $7200000.0
+  • Fender Stratocaster Player [Sunburst] x1 | $2899000.0 c/u | subtotal: $2899000.0
+  • Gibson Les Paul Standard '50s [Gold Top] x1 | $8499000.0 c/u | subtotal: $8499000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $18.598.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #2
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-23
+  Usuario  : #4
+  Envío a  : Dirección por definir
+  Estado   : ENTREGADO
+╠═══════════════════════════════════════╣
+  • Roland JUNO-DS61 Sintetizador x5 | $3799000.0 c/u | subtotal: $1.8995E7
+  • Roland FP-90X Piano Digital [Negro] x1 | $5499000.0 c/u | subtotal: $5499000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $24.494.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #3
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-23
+  Usuario  : #4
+  Envío a  : Dirección por definir
+  Estado   : ENTREGADO
+╠═══════════════════════════════════════╣
+  • Fender Telecaster American Pro II [3-Color Sunburst] x1 | $7200000.0 c/u | subtotal: $7200000.0
+  • Fender Precision Bass Player x1 | $3299000.0 c/u | subtotal: $3299000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $10.499.000,00
+╚═══════════════════════════════════════╝
+
+══════════════════════════════════════════════════════

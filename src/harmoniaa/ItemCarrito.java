@@ -3,12 +3,12 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package harmoniaa;
-
+import java.io.Serializable;
 /**
  *
  * @author CARLOS ANAYA
  */
-public class ItemCarrito {
+public class ItemCarrito implements Serializable {
      private Producto producto;
     private Variante variante;      
     private int      cantidad;
