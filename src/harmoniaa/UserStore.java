@@ -3,10 +3,12 @@ package harmoniaa;
 import java.io.*;
 import java.nio.file.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class UserStore {
-
+  
     
     
     private static final List<Usuario> usuarios = new ArrayList<>();
@@ -146,6 +148,5 @@ public class UserStore {
         EMAIL_NO_EXISTE,
         CONTRASENA_INCORRECTA
     }
-    
     
 }

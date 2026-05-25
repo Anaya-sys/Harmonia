@@ -2,3 +2,4 @@
 1|4|ENTREGADO|2026-05-23|18598000.00|Dirección por definir
 2|4|ENTREGADO|2026-05-23|24494000.00|Dirección por definir
 3|4|ENTREGADO|2026-05-23|10499000.00|Dirección por definir
+4|4|PENDIENTE|2026-05-24|10099000.00|Dirección por definir

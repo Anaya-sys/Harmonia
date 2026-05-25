@@ -9,7 +9,7 @@ package harmoniaa;
  * @author CARLOS ANAYA
  */
 public class PerfilUsuario {
-    private TipoPerfil tipo;
+private TipoPerfil tipo;
     private String instrumento;
     private double presupuesto;
 

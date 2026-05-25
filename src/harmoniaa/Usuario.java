@@ -11,7 +11,7 @@ import java.util.ArrayList;
  * @author CARLOS ANAYA
  */
 public class Usuario {
-   private int                 id;
+    private int                 id;
     private String              nombre;
     private String              email;
     private String              contrasena;
