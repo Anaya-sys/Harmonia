@@ -53,8 +53,7 @@ import javafx.util.Duration;
  * ══════════════════════════════════════════════════════════════════════════════
  */
 public class DashboardAdminController {
-
-    // ── SIDEBAR ───────────────────────────────────────────────────────────────
+ // ── SIDEBAR ───────────────────────────────────────────────────────────────
     @FXML private VBox  sidebar;
     @FXML private HBox  logoBox;
     @FXML private HBox  adminBadgeBox;
@@ -325,7 +324,179 @@ public class DashboardAdminController {
     }
  
     @FXML private void navegarCatalogoAdmin() { mostrarSeccion(paneCatalogoAdmin, navBtnCatalogo); }
-    @FXML private void navegarUsuariosAdmin() { mostrarSeccion(paneUsuariosAdmin, navBtnUsuarios); }
+    @FXML private void navegarUsuariosAdmin() {
+        renderUsuariosAdmin();
+        mostrarSeccion(paneUsuariosAdmin, navBtnUsuarios);
+    }
+ 
+    // ══════════════════════════════════════════════════════════════════════════
+    //  CATÁLOGO DE USUARIOS
+    // ══════════════════════════════════════════════════════════════════════════
+ 
+    /**
+     * Rellena paneUsuariosAdmin con una tarjeta por cada usuario registrado.
+     * Muestra: avatar inicial, nombre, email, rol y tipo de perfil.
+     * El admin también puede ver cuántos pedidos tiene cada usuario.
+     */
+    private void renderUsuariosAdmin() {
+        // Obtener el ScrollPane → su contenido es un VBox (definido en FXML)
+        // Si el FXML ya tiene un VBox dentro del ScrollPane, lo buscamos;
+        // de lo contrario lo creamos y lo asignamos como contenido.
+        VBox contenedor;
+        if (paneUsuariosAdmin.getContent() instanceof VBox vb) {
+            contenedor = vb;
+        } else {
+            contenedor = new VBox(14);
+            contenedor.setStyle("-fx-padding: 24;");
+            paneUsuariosAdmin.setContent(contenedor);
+            paneUsuariosAdmin.setFitToWidth(true);
+        }
+        contenedor.getChildren().clear();
+ 
+        java.util.List<Usuario> usuarios = UserStore.getTodos();
+ 
+        // ── Encabezado ────────────────────────────────────────────────────────
+        HBox encabezado = new HBox(12);
+        encabezado.setAlignment(Pos.CENTER_LEFT);
+        encabezado.setStyle("-fx-padding: 0 0 8 0;");
+ 
+        Label titulo = new Label("👥  Usuarios registrados");
+        titulo.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+        HBox.setHgrow(titulo, Priority.ALWAYS);
+ 
+        Label contador = new Label(usuarios.size() + " usuario" + (usuarios.size() != 1 ? "s" : ""));
+        contador.setStyle(
+            "-fx-font-size: 12px; -fx-text-fill: #A99CF0; " +
+            "-fx-background-color: rgba(86,74,181,0.18); -fx-background-radius: 20; " +
+            "-fx-padding: 4 12 4 12;");
+ 
+        encabezado.getChildren().addAll(titulo, contador);
+        contenedor.getChildren().add(encabezado);
+ 
+        if (usuarios.isEmpty()) {
+            Label vacio = new Label("No hay usuarios registrados.");
+            vacio.setStyle("-fx-font-size: 13px; -fx-text-fill: #8F8AA8; -fx-padding: 20 0 0 0;");
+            contenedor.getChildren().add(vacio);
+            return;
+        }
+ 
+        for (Usuario u : usuarios) {
+            contenedor.getChildren().add(crearTarjetaUsuario(u));
+        }
+    }
+ 
+    /** Construye la tarjeta visual de un usuario para el panel de administración. */
+    private HBox crearTarjetaUsuario(Usuario u) {
+        HBox card = new HBox(16);
+        card.setAlignment(Pos.CENTER_LEFT);
+        card.setStyle(
+            "-fx-background-color: #1E1A2E; -fx-background-radius: 14; " +
+            "-fx-border-color: rgba(86,74,181,0.2); -fx-border-radius: 14; " +
+            "-fx-padding: 16 20 16 20; " +
+            "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.3),8,0,0,3);");
+ 
+        // ── Avatar con inicial ──────────────────────────────────────────────────
+        javafx.scene.shape.Circle avatarBg = new javafx.scene.shape.Circle(22);
+        boolean esAdmin = u.getRol() == Rol.ADMIN;
+        avatarBg.setFill(javafx.scene.paint.Color.web(
+            esAdmin ? "rgba(188,127,21,0.25)" : "rgba(86,74,181,0.25)"));
+        avatarBg.setStroke(javafx.scene.paint.Color.web(
+            esAdmin ? "#BC7F15" : "#564AB5"));
+        avatarBg.setStrokeWidth(1.5);
+ 
+        String inicial = (u.getNombre() != null && !u.getNombre().isBlank())
+            ? String.valueOf(u.getNombre().trim().toUpperCase().charAt(0)) : "?";
+        Label lblInicial = new Label(inicial);
+        lblInicial.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; " +
+            "-fx-text-fill: " + (esAdmin ? "#BC7F15" : "#A99CF0") + ";");
+ 
+        javafx.scene.layout.StackPane avatar = new javafx.scene.layout.StackPane(avatarBg, lblInicial);
+        avatar.setMinSize(44, 44); avatar.setPrefSize(44, 44); avatar.setMaxSize(44, 44);
+ 
+        // ── Info principal ────────────────────────────────────────────────────
+        VBox info = new VBox(4);
+        HBox.setHgrow(info, Priority.ALWAYS);
+ 
+        Label lblNombre = new Label(u.getNombre());
+        lblNombre.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+ 
+        Label lblEmail = new Label("✉  " + u.getEmail());
+        lblEmail.setStyle("-fx-font-size: 12px; -fx-text-fill: #8F8AA8;");
+ 
+        HBox chips = new HBox(8);
+        chips.setAlignment(Pos.CENTER_LEFT);
+ 
+        // Badge rol
+        Label rolBadge = new Label(esAdmin ? "⭐  ADMIN" : "🛒  COMPRADOR");
+        rolBadge.setStyle(
+            "-fx-font-size: 10px; -fx-font-weight: bold; -fx-padding: 3 10 3 10; " +
+            "-fx-background-radius: 20; -fx-border-radius: 20; " +
+            (esAdmin
+                ? "-fx-background-color: rgba(188,127,21,0.15); -fx-text-fill: #BC7F15; -fx-border-color: rgba(188,127,21,0.4);"
+                : "-fx-background-color: rgba(86,74,181,0.15); -fx-text-fill: #A99CF0; -fx-border-color: rgba(86,74,181,0.4);"));
+ 
+        // Badge tipo perfil
+        PerfilUsuario perfil = u.getPerfil();
+        if (perfil != null) {
+            Label tipoBadge = new Label("🎵  " + perfil.getTipo().name());
+            tipoBadge.setStyle(
+                "-fx-font-size: 10px; -fx-padding: 3 10 3 10; " +
+                "-fx-background-radius: 20; -fx-border-radius: 20; " +
+                "-fx-background-color: rgba(16,185,129,0.1); " +
+                "-fx-text-fill: #10b981; -fx-border-color: rgba(16,185,129,0.3);");
+            chips.getChildren().addAll(rolBadge, tipoBadge);
+ 
+            // Instrumento
+            String instr = perfil.getInstrumento();
+            if (instr != null && !instr.isBlank()) {
+                Label instrLbl = new Label("🎸  " + instr);
+                instrLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: #8F8AA8;");
+                chips.getChildren().add(instrLbl);
+            }
+        } else {
+            chips.getChildren().add(rolBadge);
+        }
+ 
+        info.getChildren().addAll(lblNombre, lblEmail, chips);
+ 
+        // ── Estadísticas de pedidos ───────────────────────────────────────────
+        long nPedidos = gestor.getTodos().stream()
+            .filter(p -> p.getIdUsuario() == u.getId()).count();
+        double totalGasto = gestor.getTodos().stream()
+            .filter(p -> p.getIdUsuario() == u.getId())
+            .mapToDouble(p -> p.getTotal()).sum();
+ 
+        VBox stats = new VBox(4);
+        stats.setAlignment(Pos.CENTER_RIGHT);
+        stats.setStyle("-fx-min-width: 120;");
+ 
+        Label lblPedidos = new Label(nPedidos + " pedido" + (nPedidos != 1 ? "s" : ""));
+        lblPedidos.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #A99CF0;");
+ 
+        Label lblGasto = new Label(String.format("$%,.0f", totalGasto));
+        lblGasto.setStyle("-fx-font-size: 12px; -fx-text-fill: #BC7F15;");
+ 
+        Label lblId = new Label("ID: " + u.getId());
+        lblId.setStyle("-fx-font-size: 10px; -fx-text-fill: #6b6890;");
+ 
+        stats.getChildren().addAll(lblPedidos, lblGasto, lblId);
+ 
+        card.getChildren().addAll(avatar, info, stats);
+ 
+        // Hover
+        card.setOnMouseEntered(e -> card.setStyle(
+            "-fx-background-color: #252540; -fx-background-radius: 14; " +
+            "-fx-border-color: rgba(86,74,181,0.45); -fx-border-radius: 14; " +
+            "-fx-padding: 16 20 16 20; " +
+            "-fx-effect: dropshadow(gaussian,rgba(86,74,181,0.2),14,0,0,5);"));
+        card.setOnMouseExited(e -> card.setStyle(
+            "-fx-background-color: #1E1A2E; -fx-background-radius: 14; " +
+            "-fx-border-color: rgba(86,74,181,0.2); -fx-border-radius: 14; " +
+            "-fx-padding: 16 20 16 20; " +
+            "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.3),8,0,0,3);"));
+ 
+        return card;
+    }
  
     @FXML
     private void navegarPerfilAdmin() {
@@ -568,7 +739,7 @@ public class DashboardAdminController {
     @FXML
     private void filtrarPedidosAdmin(javafx.event.ActionEvent event) {
         Button origen = (Button) event.getSource();
-
+ 
         // Se lee el valor semántico fijo asignado via userData en el FXML,
         // en lugar del texto visible que puede cambiar con la animación del sidebar.
         Object ud = origen.getUserData();
@@ -583,7 +754,7 @@ public class DashboardAdminController {
             else if (texto.contains("Enviado"))     filtroAdmin = "ENVIADO";
             else if (texto.contains("Entregado"))   filtroAdmin = "ENTREGADO";
         }
-
+ 
         actualizarTabsEstilo(origen);
         renderPedidosAdmin();
     }

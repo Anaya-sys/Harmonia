@@ -8,3 +8,7 @@
 3|4|Fender Precision Bass Player|3299000.00|-1||0.00|1
 4|3|Fender Telecaster American Pro II|7200000.00|6|3-Color Sunburst|0.00|1
 4|1|Fender Stratocaster Player|2899000.00|1|Sunburst|0.00|1
+5|6|Roland FP-90X Piano Digital|5499000.00|9|Negro|0.00|1
+5|3|Fender Telecaster American Pro II|7200000.00|6|3-Color Sunburst|0.00|1
+6|5|Yamaha P-125 Piano Digital|2199000.00|7|Negro|0.00|1
+6|4|Fender Precision Bass Player|3299000.00|-1||0.00|1

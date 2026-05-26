@@ -9,23 +9,22 @@ package harmoniaa;
  * @author CARLOS ANAYA
  */
 public class PerfilUsuario {
-private TipoPerfil tipo;
-    private String instrumento;
-    private double presupuesto;
-
-    public PerfilUsuario(TipoPerfil tipo, String instrumento, double presupuesto) {
+    private TipoPerfil tipo;
+    private String     instrumento;
+ 
+    public PerfilUsuario(TipoPerfil tipo, String instrumento) {
         this.tipo        = tipo;
         this.instrumento = instrumento;
-        this.presupuesto = presupuesto;
     }
-
+ 
     public TipoPerfil getTipo()        { return tipo; }
     public String     getInstrumento() { return instrumento; }
-    public double     getPresupuesto() { return presupuesto; }
-
+ 
+    public void setTipo(TipoPerfil tipo)               { this.tipo = tipo; }
+    public void setInstrumento(String instrumento)      { this.instrumento = instrumento; }
+ 
     @Override
     public String toString() {
-        return "Perfil[" + tipo + "] instrumento: " + instrumento
-             + " | presupuesto: $" + presupuesto;
+        return "PerfilUsuario[" + tipo + ", " + instrumento + "]";
     }
 }

@@ -149,7 +149,7 @@ public class Controller {
         }
  
         int nuevoId = UserStore.siguienteId();
-        PerfilUsuario perfil = new PerfilUsuario(TipoPerfil.ESTUDIANTE, "Sin definir", 0.0);
+        PerfilUsuario perfil = new PerfilUsuario(TipoPerfil.ESTUDIANTE, "Sin definir");
         Usuario nuevo = new Usuario(nuevoId, nombre, correo, password, perfil, Rol.COMPRADOR);
  
         if (UserStore.registrar(nuevo)) {
