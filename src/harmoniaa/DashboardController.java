@@ -44,7 +44,7 @@ import javafx.util.Duration;
 
 public class DashboardController {
 
-      // ── SIDEBAR ────────────────────────────────────────────────────────────────
+       // ── SIDEBAR ────────────────────────────────────────────────────────────────
     @FXML private VBox  sidebar;
     @FXML private HBox  logoBox;
     @FXML private VBox  userTextBox;
@@ -128,12 +128,10 @@ public class DashboardController {
     @FXML private Label     lblRolBadge;
     @FXML private Label     lblTipoPerfil;
     @FXML private Label     lblInstrumento;
-    @FXML private Label     lblPresupuesto;
     @FXML private VBox      seccionEditar;
     @FXML private Button    btnEditarPerfil;
     @FXML private TextField txtEditNombre;
     @FXML private TextField txtEditInstrumento;
-    @FXML private TextField txtEditPresupuesto;
     @FXML private Label     lblPerfilFeedback;
  
     // ── ESTADO INTERNO ─────────────────────────────────────────────────────────
@@ -441,9 +439,6 @@ public class DashboardController {
             lblTipoPerfil.setText(p.getTipo().name());
             lblInstrumento.setText(p.getInstrumento() == null || p.getInstrumento().isBlank()
                 ? "Sin definir" : p.getInstrumento());
-            if (lblPresupuesto != null) {
-                lblPresupuesto.setText("Sin límite (simulación)");
-            }
             txtEditNombre.setText(u.getNombre());
             txtEditInstrumento.setText(p.getInstrumento());
         }
@@ -728,6 +723,17 @@ private void cerrarDetalle() {
                 : "-fx-text-fill: #ef4444; -fx-background-color: rgba(239,68,68,0.12); ") +
             "-fx-background-radius: 6; -fx-padding: 3 10 3 10;");
         starsRow.getChildren().addAll(estrellas, dispBadge);
+        // Badge de stock bajo en el panel de detalle
+        int stockDetalle = calcularStockTotal(p);
+        if (p.estaDisponible() && stockDetalle > 0 && stockDetalle <= 6) {
+            Label badgeUlt = new Label("🔥  ¡Solo quedan " + stockDetalle + " unidades disponibles!");
+            badgeUlt.setStyle(
+                "-fx-background-color: rgba(239,68,68,0.12); -fx-background-radius: 8; " +
+                "-fx-border-color: rgba(239,68,68,0.35); -fx-border-radius: 8; " +
+                "-fx-text-fill: #ef4444; -fx-font-size: 12px; -fx-font-weight: bold; " +
+                "-fx-padding: 6 14 6 14;");
+            starsRow.getChildren().add(badgeUlt);
+        }
  
         // Separador
         Separator sep1 = new Separator();
@@ -1133,8 +1139,15 @@ private void cerrarDetalle() {
     // CATÁLOGO – RENDER
     // ══════════════════════════════════════════════════════════════════════════
     private void renderCatalogo() {
+        // Fusionar catálogo base con productos agregados por el admin
+        List<Producto> todosProductos = new ArrayList<>(catalogo);
+        for (Producto extra : CatalogoStore.getExtras()) {
+            boolean yaExiste = todosProductos.stream().anyMatch(pp -> pp.getId() == extra.getId());
+            if (!yaExiste) todosProductos.add(extra);
+        }
+
         double precioMin = sliderMin.getValue(), precioMax = sliderMax.getValue();
-        List<Producto> filtrados = catalogo.stream().filter(p -> {
+        List<Producto> filtrados = todosProductos.stream().filter(p -> {
             if (!filtroCat.equals("Todas")) {
                 Categoria cat = getCategoriaById(p.getIdCategoria());
                 if (cat == null || !cat.getNombre().equals(filtroCat)) return false;
@@ -1204,6 +1217,20 @@ private void cerrarDetalle() {
             VBox bw = new VBox(badge); bw.setStyle("-fx-padding: 8 0 0 8;");
             StackPane.setAlignment(bw, Pos.TOP_LEFT);
             imgZone.getChildren().add(bw);
+        }
+
+        // Badge "Últimas X unidades" cuando el stock es bajo (≤ 6)
+        int stockTotal = calcularStockTotal(p);
+        if (p.estaDisponible() && stockTotal > 0 && stockTotal <= 6) {
+            Label badgePoco = new Label("🔥 ¡Últimas " + stockTotal + " unidades!");
+            badgePoco.setStyle(
+                "-fx-background-color: rgba(239,68,68,0.85); -fx-background-radius: 6; " +
+                "-fx-text-fill: white; -fx-font-size: 9.5px; -fx-font-weight: bold; " +
+                "-fx-padding: 3 8 3 8;");
+            VBox bwPoco = new VBox(badgePoco);
+            bwPoco.setStyle("-fx-padding: 0 0 8 0;");
+            StackPane.setAlignment(bwPoco, Pos.BOTTOM_LEFT);
+            imgZone.getChildren().add(bwPoco);
         }
  
         // Botón deseo
@@ -2106,7 +2133,6 @@ private void cerrarDetalle() {
         lblPerfilNombre.setText(nombre); lblSidebarNombre.setText(primerNombre(nombre));
         lblGreeting.setText("Hola, " + primerNombre(nombre) + " 👋");
         lblInstrumento.setText(instrumento.isBlank() ? "Sin definir" : instrumento);
-        if (lblPresupuesto != null) lblPresupuesto.setText("Sin límite (simulación)");
         mostrarFeedbackPerfil("✓ Perfil actualizado.", FB_OK);
         modoEdicion = false;
         seccionEditar.setVisible(false); seccionEditar.setManaged(false);
@@ -2188,6 +2214,12 @@ private void cerrarDetalle() {
             case 5 -> new Categoria(5, "Accesorios");
             default -> null;
         };
+    }
+ 
+    // Suma stock de todas las variantes; sin variantes usa estaDisponible como fallback
+    private int calcularStockTotal(Producto p) {
+        if (p.getVariantes().isEmpty()) return p.estaDisponible() ? 999 : 0;
+        return p.getVariantes().stream().mapToInt(Variante::getStock).sum();
     }
  
     private String getEmojiCategoria(int idCat) {

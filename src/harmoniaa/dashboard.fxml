@@ -428,22 +428,7 @@
                                           -fx-text-fill: #E9E9ED;"/>
                         </VBox>
 
-                        <!-- Card: Presupuesto -->
-                        <VBox spacing="6" HBox.hgrow="ALWAYS"
-                              style="-fx-background-color: #1E1A2E;
-                                     -fx-background-radius: 12;
-                                     -fx-border-color: rgba(86,74,181,0.2);
-                                     -fx-border-radius: 12;
-                                     -fx-padding: 18 20 18 20;">
-                            <Label text="Presupuesto"
-                                   style="-fx-font-size: 10px;
-                                          -fx-text-fill: #8F8AA8;
-                                          -fx-font-weight: bold;"/>
-                            <Label fx:id="lblPresupuesto" text="—"
-                                   style="-fx-font-size: 16px;
-                                          -fx-font-weight: bold;
-                                          -fx-text-fill: #BC7F15;"/>
-                        </VBox>
+
                     </HBox>
 
                     <!-- FORMULARIO DE EDICIÓN  ─  oculto por defecto
@@ -500,22 +485,7 @@
                                               -fx-font-size: 13px;"/>
                         </VBox>
 
-                        <!-- Presupuesto -->
-                        <VBox spacing="6">
-                            <Label text="Presupuesto (USD)"
-                                   style="-fx-font-size: 11px;
-                                          -fx-text-fill: #8F8AA8;"/>
-                            <TextField fx:id="txtEditPresupuesto"
-                                       promptText="Ej: 1500"
-                                       prefHeight="38.0"
-                                       style="-fx-background-color: #272239;
-                                              -fx-background-radius: 8;
-                                              -fx-border-color: rgba(86,74,181,0.3);
-                                              -fx-border-radius: 8;
-                                              -fx-text-fill: #E9E9ED;
-                                              -fx-prompt-text-fill: #8F8AA8;
-                                              -fx-font-size: 13px;"/>
-                        </VBox>
+
 
                         <!--
                             TODO: Tipo de perfil  (ComboBox)
