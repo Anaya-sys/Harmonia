@@ -33,6 +33,15 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.stage.FileChooser;
+
 
 /**
  * ══════════════════════════════════════════════════════════════════════════════
@@ -53,7 +62,7 @@ import javafx.util.Duration;
  * ══════════════════════════════════════════════════════════════════════════════
  */
 public class DashboardAdminController {
-  // ── SIDEBAR ───────────────────────────────────────────────────────────────
+   // ── SIDEBAR ───────────────────────────────────────────────────────────────
     @FXML private VBox  sidebar;
     @FXML private HBox  logoBox;
     @FXML private HBox  adminBadgeBox;
@@ -174,9 +183,20 @@ public class DashboardAdminController {
     public void initialize() {
         inicializarSidebar();
         cargarDatosAdmin();
+        CatalogoStore.inicializarBaseSiVacio();
         actualizarOverview();
         actualizarTabsEstilo(tabAdminTodos);
         mostrarSeccion(paneOverview, navBtnDashboard);
+        
+        CatalogoStore.addChangeListener(() -> {
+        // Platform.runLater asegura que los cambios visuales se hagan de forma segura en el hilo de JavaFX
+        javafx.application.Platform.runLater(() -> {
+            renderCatalogoAdmin(); // Refresca el inventario/catálogo del admin con las nuevas imágenes o stock
+            actualizarOverview();  // Refresca las tarjetas de alertas y bajo stock inmediatamente
+        });
+    });
+        
+        
     }
  
     // ── Datos de sesión del admin en sidebar/perfil ───────────────────────────
@@ -197,6 +217,64 @@ public class DashboardAdminController {
         if (lblPerfilEmailAdmin   != null) lblPerfilEmailAdmin.setText(u.getEmail());
     }
  
+       private static final java.util.Map<Integer, String> IMG_PRODUCTO = new java.util.HashMap<>();
+    static {
+        IMG_PRODUCTO.put(1,  "prodimg/p1_fender_strat.png");
+        IMG_PRODUCTO.put(2,  "prodimg/p2_gibson_lp.png");
+        IMG_PRODUCTO.put(3,  "prodimg/p3_fender_tele.png");
+        IMG_PRODUCTO.put(4,  "prodimg/p4_fender_bass.png");
+        IMG_PRODUCTO.put(5,  "prodimg/p5_yamaha_p125.png");
+        IMG_PRODUCTO.put(6,  "prodimg/p6_roland_fp90x.png");
+        IMG_PRODUCTO.put(7,  "prodimg/p7_roland_juno.png");
+        IMG_PRODUCTO.put(8,  "prodimg/p8_roland_td17.png");
+        IMG_PRODUCTO.put(9,  "prodimg/p9_yamaha_dtx.png");
+        IMG_PRODUCTO.put(10, "prodimg/p10_yamaha_sax.png");
+        IMG_PRODUCTO.put(11, "prodimg/p11_yamaha_flaut.png");
+        IMG_PRODUCTO.put(12, "prodimg/p12_ath_m50x.png");
+        IMG_PRODUCTO.put(13, "prodimg/p13_shure_sm58.png");
+        IMG_PRODUCTO.put(14, "prodimg/p14_at2020.png");
+    }
+    
+    
+     private ImageView cargarImagenProducto(Producto p, double ancho, double alto) {
+        // 1. Imágenes del catálogo base (classpath: prodimg/pN_xxx.png)
+        String ruta = IMG_PRODUCTO.get(p.getId());
+        if (ruta != null) {
+            try {
+                var stream = getClass().getResourceAsStream(ruta);
+                if (stream != null) {
+                    Image img = new Image(stream, ancho, alto, true, true);
+                    if (!img.isError()) {
+                        ImageView iv = new ImageView(img);
+                        iv.setFitWidth(ancho); iv.setFitHeight(alto);
+                        iv.setPreserveRatio(true); iv.setSmooth(true);
+                        return iv;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        // 2. Imágenes de productos admin (archivo en disco: prodimg/)
+        String adminPath = CatalogoStore.getImagenAdmin(p.getId());
+        if (adminPath != null && !adminPath.isBlank()) {
+            try {
+                java.io.File f = new java.io.File(adminPath);
+                if (f.exists()) {
+                    Image img = new Image(f.toURI().toString(), ancho, alto, true, true);
+                    if (!img.isError()) {
+                        ImageView iv = new ImageView(img);
+                        iv.setFitWidth(ancho); iv.setFitHeight(alto);
+                        iv.setPreserveRatio(true); iv.setSmooth(true);
+                        return iv;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        return null;
+    }
+    
+     
+       
+    
     // ══════════════════════════════════════════════════════════════════════════
     //  SIDEBAR COLAPSABLE
     // ══════════════════════════════════════════════════════════════════════════
@@ -332,9 +410,9 @@ public class DashboardAdminController {
     // ══════════════════════════════════════════════════════════════════════════
     //  CATÁLOGO ADMIN — Gestión de productos
     // ══════════════════════════════════════════════════════════════════════════
- 
+ private String rutaImagenSeleccionada = null;
     private void renderCatalogoAdmin() {
-        VBox contenedor;
+    VBox contenedor;
         if (paneCatalogoAdmin.getContent() instanceof VBox vb) {
             contenedor = vb;
         } else {
@@ -344,23 +422,24 @@ public class DashboardAdminController {
             paneCatalogoAdmin.setFitToWidth(true);
         }
         contenedor.getChildren().clear();
+        rutaImagenSeleccionada = null; // reset
  
         // ── Encabezado ────────────────────────────────────────────────────────
         HBox encabezado = new HBox(14);
-        encabezado.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        encabezado.setAlignment(Pos.CENTER_LEFT);
         Label titulo = new Label("🏷️  Gestión de Catálogo");
         titulo.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
         HBox.setHgrow(titulo, Priority.ALWAYS);
-        Label contador = new Label(
-            (CatalogoStore.getExtras().size()) + " producto" +
-            (CatalogoStore.getExtras().size() != 1 ? "s" : "") + " agregados por admin");
+        int totalProds = CatalogoStore.getTodos().size();
+        Label contador = new Label(totalProds + " producto" +
+            (totalProds != 1 ? "s" : "") + " en inventario");
         contador.setStyle("-fx-font-size: 12px; -fx-text-fill: #A99CF0; " +
             "-fx-background-color: rgba(86,74,181,0.15); -fx-background-radius: 20; " +
             "-fx-padding: 4 14 4 14;");
         encabezado.getChildren().addAll(titulo, contador);
         contenedor.getChildren().add(encabezado);
  
-        // ── Formulario para agregar producto ──────────────────────────────────
+        // ── Formulario ────────────────────────────────────────────────────────
         VBox formCard = new VBox(16);
         formCard.setStyle("-fx-background-color: #1E1A2E; -fx-background-radius: 14; " +
             "-fx-border-color: rgba(86,74,181,0.3); -fx-border-radius: 14; -fx-padding: 22 24 22 24;");
@@ -401,6 +480,207 @@ public class DashboardAdminController {
             "-fx-text-fill: #E9E9ED; -fx-font-size: 12px;");
         cmbCat.setPrefWidth(160);
         fila2.getChildren().addAll(txtPrecioProd, txtStockProd, cmbCat);
+
+        // Fila 3: VARIANTES ──────────────────────────────────────────────────
+        // Lista interna donde se acumulan las variantes creadas antes de guardar.
+        // Cada elemento es String[3]: [nombre, precioExtra, stock]
+        java.util.List<String[]> variantesTemp = new java.util.ArrayList<>();
+
+        VBox variantesZona = new VBox(10);
+        variantesZona.setStyle(
+            "-fx-background-color: rgba(86,74,181,0.06); -fx-background-radius: 10; " +
+            "-fx-border-color: rgba(86,74,181,0.18); -fx-border-radius: 10; -fx-padding: 14 16 14 16;");
+
+        Label lblVarTitulo = new Label("🎨  Variantes (opcional)");
+        lblVarTitulo.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #A99CF0;");
+
+        Label lblVarHint = new Label("Si no agregas variantes, se crea automáticamente una variante Estándar con el stock de arriba.");
+        lblVarHint.setStyle("-fx-font-size: 11px; -fx-text-fill: #6b6890;");
+        lblVarHint.setWrapText(true);
+
+        // VBox donde aparecen las filas de variantes ya añadidas
+        VBox variantesLista = new VBox(6);
+
+        // Fila de entrada: nombre + precio extra + stock + botón +
+        HBox filaEntradaVar = new HBox(10);
+        filaEntradaVar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        javafx.scene.control.TextField txtVarNombre = new javafx.scene.control.TextField();
+        txtVarNombre.setPromptText("Nombre variante (ej: Rojo)");
+        txtVarNombre.setStyle(tfStyle);
+        HBox.setHgrow(txtVarNombre, Priority.ALWAYS);
+
+        javafx.scene.control.TextField txtVarPrecioExtra = new javafx.scene.control.TextField();
+        txtVarPrecioExtra.setPromptText("Precio extra (0)");
+        txtVarPrecioExtra.setPrefWidth(120);
+        txtVarPrecioExtra.setStyle(tfStyle);
+
+        javafx.scene.control.TextField txtVarStock = new javafx.scene.control.TextField();
+        txtVarStock.setPromptText("Stock");
+        txtVarStock.setPrefWidth(80);
+        txtVarStock.setStyle(tfStyle);
+
+        Button btnAddVar = new Button("+ Añadir");
+        btnAddVar.setStyle(
+            "-fx-background-color: rgba(86,74,181,0.18); -fx-background-radius: 7; " +
+            "-fx-border-color: rgba(86,74,181,0.4); -fx-border-radius: 7; " +
+            "-fx-text-fill: #A99CF0; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 6 12 6 12;");
+
+        // Label de feedback inline para variantes
+        Label lblVarError = new Label("");
+        lblVarError.setStyle("-fx-font-size: 11px; -fx-text-fill: #ef4444;");
+
+        // Label stock total (se actualiza cada vez que se añade/elimina una variante)
+        Label lblStockTotal = new Label("");
+        lblStockTotal.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #10b981;");
+        lblStockTotal.setVisible(false);
+        lblStockTotal.setManaged(false);
+
+        // Recalcula el total y actualiza visibilidad del campo "Stock inicial"
+        Runnable actualizarTotal = () -> {
+            int total = variantesTemp.stream()
+                .mapToInt(vd -> { try { return Integer.parseInt(vd[2]); } catch (Exception ex) { return 0; } })
+                .sum();
+            boolean hayVariantes = !variantesTemp.isEmpty();
+            lblStockTotal.setText("Stock total: " + total + " unidades");
+            lblStockTotal.setVisible(hayVariantes);
+            lblStockTotal.setManaged(hayVariantes);
+            // Ocultar/mostrar el campo "Stock inicial" según haya variantes
+            txtStockProd.setDisable(hayVariantes);
+            txtStockProd.setOpacity(hayVariantes ? 0.35 : 1.0);
+            if (hayVariantes) {
+                txtStockProd.setPromptText("Definido por variantes");
+                txtStockProd.clear();
+            } else {
+                txtStockProd.setPromptText("Stock inicial");
+            }
+        };
+
+        // Conectar actualizarTotal al botón añadir y al eliminar
+        btnAddVar.setOnAction(ev -> {
+            String vNom   = txtVarNombre.getText().trim();
+            String vPreEx = txtVarPrecioExtra.getText().trim().isEmpty() ? "0" : txtVarPrecioExtra.getText().trim();
+            String vStock = txtVarStock.getText().trim();
+            if (vNom.isEmpty() || vStock.isEmpty()) {
+                lblVarError.setText("⚠ Nombre y stock son obligatorios.");
+                return;
+            }
+            try {
+                double pe = Double.parseDouble(vPreEx.replace(",","").replace(".",""));
+                int    vs = Integer.parseInt(vStock);
+                if (vs < 0 || pe < 0) throw new NumberFormatException();
+                lblVarError.setText("");
+
+                HBox filaVar = new HBox(8);
+                filaVar.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                filaVar.setStyle(
+                    "-fx-background-color: rgba(86,74,181,0.1); -fx-background-radius: 6; " +
+                    "-fx-padding: 5 10 5 10;");
+
+                Label lNom = new Label(vNom);
+                lNom.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+                HBox.setHgrow(lNom, Priority.ALWAYS);
+
+                Label lPe = new Label(pe == 0 ? "sin recargo" : "+ $" + String.format("%,.0f", pe));
+                lPe.setStyle("-fx-font-size: 11px; -fx-text-fill: " + (pe == 0 ? "#6b6890" : "#BC7F15") + ";");
+
+                Label lSt = new Label("Stock: " + vs);
+                lSt.setStyle("-fx-font-size: 11px; -fx-text-fill: " + (vs <= 5 ? "#ef4444" : "#10b981") + ";");
+
+                String[] dataRef = {vNom, vPreEx, vStock};
+                Button btnElim = new Button("✕");
+                btnElim.setStyle(
+                    "-fx-background-color: rgba(239,68,68,0.1); -fx-background-radius: 5; " +
+                    "-fx-text-fill: #ef4444; -fx-font-size: 10px; -fx-cursor: hand; -fx-padding: 3 7 3 7;");
+                btnElim.setOnAction(evv -> {
+                    variantesTemp.remove(dataRef);
+                    variantesLista.getChildren().remove(filaVar);
+                    actualizarTotal.run();
+                });
+
+                filaVar.getChildren().addAll(lNom, lPe, lSt, btnElim);
+                variantesTemp.add(dataRef);
+                variantesLista.getChildren().add(filaVar);
+
+                txtVarNombre.clear();
+                txtVarPrecioExtra.clear();
+                txtVarStock.clear();
+                txtVarNombre.requestFocus();
+                actualizarTotal.run();
+
+            } catch (NumberFormatException ex) {
+                lblVarError.setText("⚠ Precio extra y stock deben ser números válidos.");
+            }
+        });
+
+        filaEntradaVar.getChildren().addAll(txtVarNombre, txtVarPrecioExtra, txtVarStock, btnAddVar);
+        variantesZona.getChildren().addAll(lblVarTitulo, lblVarHint, variantesLista, filaEntradaVar, lblVarError, lblStockTotal);
+
+        // Fila 4: IMAGEN — FileChooser + preview de nombre seleccionado ────────
+        HBox filaImagen = new HBox(12);
+        filaImagen.setAlignment(Pos.CENTER_LEFT);
+ 
+        Label lblImgTitulo = new Label("📷  Imagen del producto:");
+        lblImgTitulo.setStyle("-fx-font-size: 12px; -fx-text-fill: #8F8AA8;");
+ 
+        Label lblImgSeleccionada = new Label("Sin imagen seleccionada");
+        lblImgSeleccionada.setStyle("-fx-font-size: 12px; -fx-text-fill: #6b6890; " +
+            "-fx-background-color: #272239; -fx-background-radius: 8; " +
+            "-fx-padding: 6 14 6 14;");
+        HBox.setHgrow(lblImgSeleccionada, Priority.ALWAYS);
+ 
+        Button btnSeleccionarImg = new Button("🖼  Seleccionar imagen");
+        btnSeleccionarImg.setStyle(
+            "-fx-background-color: rgba(86,74,181,0.2); -fx-background-radius: 8; " +
+            "-fx-border-color: rgba(86,74,181,0.4); -fx-border-radius: 8; " +
+            "-fx-text-fill: #A99CF0; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 7 14 7 14;");
+        btnSeleccionarImg.setOnMouseEntered(e -> btnSeleccionarImg.setStyle(
+            "-fx-background-color: rgba(86,74,181,0.35); -fx-background-radius: 8; " +
+            "-fx-border-color: #564AB5; -fx-border-radius: 8; " +
+            "-fx-text-fill: white; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 7 14 7 14;"));
+        btnSeleccionarImg.setOnMouseExited(e -> btnSeleccionarImg.setStyle(
+            "-fx-background-color: rgba(86,74,181,0.2); -fx-background-radius: 8; " +
+            "-fx-border-color: rgba(86,74,181,0.4); -fx-border-radius: 8; " +
+            "-fx-text-fill: #A99CF0; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 7 14 7 14;"));
+ 
+        btnSeleccionarImg.setOnAction(e -> {
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Seleccionar imagen del producto");
+            chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Imágenes", "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp")
+            );
+            Stage stage = (Stage) btnSeleccionarImg.getScene().getWindow();
+            File archivo = chooser.showOpenDialog(stage);
+            if (archivo != null) {
+                // Copiar imagen a prodimg/ (junto al .jar o en el directorio de trabajo)
+                String destPath = copiarImagenAProductImg(archivo);
+                if (destPath != null) {
+                    rutaImagenSeleccionada = destPath;
+                    lblImgSeleccionada.setText("✓  " + archivo.getName());
+                    lblImgSeleccionada.setStyle("-fx-font-size: 12px; -fx-text-fill: #10b981; " +
+                        "-fx-background-color: rgba(16,185,129,0.1); -fx-background-radius: 8; " +
+                        "-fx-padding: 6 14 6 14;");
+                } else {
+                    lblImgSeleccionada.setText("⚠  No se pudo copiar la imagen");
+                    lblImgSeleccionada.setStyle("-fx-font-size: 12px; -fx-text-fill: #ef4444; " +
+                        "-fx-background-color: rgba(239,68,68,0.1); -fx-background-radius: 8; " +
+                        "-fx-padding: 6 14 6 14;");
+                }
+            }
+        });
+ 
+        // Botón limpiar imagen
+        Button btnLimpiarImg = new Button("✕");
+        btnLimpiarImg.setStyle("-fx-background-color: rgba(239,68,68,0.12); -fx-background-radius: 6; " +
+            "-fx-text-fill: #ef4444; -fx-font-size: 11px; -fx-cursor: hand; -fx-padding: 6 10 6 10;");
+        btnLimpiarImg.setOnAction(e -> {
+            rutaImagenSeleccionada = null;
+            lblImgSeleccionada.setText("Sin imagen seleccionada");
+            lblImgSeleccionada.setStyle("-fx-font-size: 12px; -fx-text-fill: #6b6890; " +
+                "-fx-background-color: #272239; -fx-background-radius: 8; -fx-padding: 6 14 6 14;");
+        });
+ 
+        filaImagen.getChildren().addAll(lblImgTitulo, lblImgSeleccionada, btnSeleccionarImg, btnLimpiarImg);
  
         Label lblFeedbackCat = new Label("");
         lblFeedbackCat.setStyle("-fx-font-size: 12px;");
@@ -418,59 +698,308 @@ public class DashboardAdminController {
             "-fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; " +
             "-fx-cursor: hand; -fx-padding: 10 22 10 22;"));
         btnAgregarProd.setOnAction(e -> {
-            String nom  = txtNomProd.getText().trim();
-            String desc = txtDescProd.getText().trim();
+            String nom    = txtNomProd.getText().trim();
+            String desc   = txtDescProd.getText().trim();
             String preStr = txtPrecioProd.getText().trim();
             String stStr  = txtStockProd.getText().trim();
             String cat    = cmbCat.getValue();
-            if (nom.isEmpty() || desc.isEmpty() || preStr.isEmpty() || stStr.isEmpty() || cat == null) {
-                lblFeedbackCat.setText("⚠  Completa todos los campos.");
+            // Stock global del campo principal es obligatorio solo si no hay variantes personalizadas
+            boolean tieneVariantesPersonalizadas = !variantesTemp.isEmpty();
+            if (nom.isEmpty() || desc.isEmpty() || preStr.isEmpty() || cat == null
+                    || (!tieneVariantesPersonalizadas && stStr.isEmpty())) {
+                lblFeedbackCat.setText("⚠  Completa todos los campos obligatorios.");
                 lblFeedbackCat.setStyle("-fx-font-size: 12px; -fx-text-fill: #ef4444;");
                 return;
             }
             try {
                 double precio = Double.parseDouble(preStr.replace(",", "").replace(".", "").trim());
-                int stock = Integer.parseInt(stStr);
-                if (precio <= 0 || stock < 0) throw new NumberFormatException();
+                if (precio <= 0) throw new NumberFormatException();
                 int idCat = switch (cat) {
                     case "Guitarras" -> 1; case "Teclados" -> 2; case "Percusión" -> 3;
                     case "Vientos" -> 4; default -> 5;
                 };
                 int nuevoId = CatalogoStore.siguienteId();
                 Producto nuevo = new Producto(nuevoId, nom, desc, precio, 0, idCat);
-                nuevo.agregarVariante(new Variante(nuevoId * 100, "Estándar", 0, stock));
-                CatalogoStore.agregar(nuevo);
-                mostrarToast("✓ Producto "+" nom   "+" agregado al catálogo.");
+
+                if (tieneVariantesPersonalizadas) {
+                    // Usar las variantes definidas por el admin
+                    int varIdx = 0;
+                    for (String[] vd : variantesTemp) {
+                        double pe  = Double.parseDouble(vd[1].replace(",","").replace(".",""));
+                        int    vst = Integer.parseInt(vd[2]);
+                        nuevo.agregarVariante(new Variante(nuevoId * 100 + varIdx, vd[0], pe, vst));
+                        varIdx++;
+                    }
+                } else {
+                    // Fallback: una sola variante "Estándar" — comportamiento original
+                    int stock = Integer.parseInt(stStr);
+                    if (stock < 0) throw new NumberFormatException();
+                    nuevo.agregarVariante(new Variante(nuevoId * 100, "Estándar", 0, stock));
+                }
+
+                CatalogoStore.agregar(nuevo, rutaImagenSeleccionada);
+                int varCount = nuevo.getVariantes().size();
+                mostrarToast("✓ Producto \"" + nom + "\" agregado"
+                    + (varCount > 1 ? " con " + varCount + " variantes." : " (variante estándar).")
+                    + (rutaImagenSeleccionada != null ? " 📷" : ""));
+
+                // Limpiar formulario completo
                 txtNomProd.clear(); txtDescProd.clear();
                 txtPrecioProd.clear(); txtStockProd.clear(); cmbCat.setValue(null);
+                rutaImagenSeleccionada = null;
+                variantesTemp.clear();
+                variantesLista.getChildren().clear();
                 lblFeedbackCat.setText("✓  Producto agregado exitosamente.");
                 lblFeedbackCat.setStyle("-fx-font-size: 12px; -fx-text-fill: #10b981;");
-                renderCatalogoAdmin(); // refrescar lista
+                renderCatalogoAdmin();
             } catch (NumberFormatException ex) {
                 lblFeedbackCat.setText("⚠  Precio y stock deben ser números válidos.");
                 lblFeedbackCat.setStyle("-fx-font-size: 12px; -fx-text-fill: #ef4444;");
             }
         });
  
-        formCard.getChildren().addAll(formTitulo, sepForm, fila1, fila2, btnAgregarProd, lblFeedbackCat);
+        formCard.getChildren().addAll(formTitulo, sepForm, fila1, fila2, variantesZona, filaImagen,
+                                       btnAgregarProd, lblFeedbackCat);
         contenedor.getChildren().add(formCard);
  
-        // ── Lista de productos admin-agregados ────────────────────────────────
-        if (!CatalogoStore.getExtras().isEmpty()) {
-            Label lblListaTitulo = new Label("📦  Productos agregados por el administrador");
-            lblListaTitulo.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
-            contenedor.getChildren().add(lblListaTitulo);
+        // ── Inventario completo (base + admin) ────────────────────────────────
+        javafx.scene.control.Separator sepInv = new javafx.scene.control.Separator();
+        sepInv.setStyle("-fx-background-color: rgba(86,74,181,0.2);");
+        contenedor.getChildren().add(sepInv);
  
-            for (Producto prod : CatalogoStore.getExtras()) {
-                contenedor.getChildren().add(crearFilaProductoAdmin(prod));
-            }
-        } else {
-            Label vacio = new Label("Aún no se han agregado productos. Usa el formulario de arriba.");
+        Label lblInventarioTitulo = new Label("📋  Inventario completo — todos los productos");
+        lblInventarioTitulo.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+        contenedor.getChildren().add(lblInventarioTitulo);
+ 
+        Label lblLeyenda = new Label(
+            "🔵 Producto base  ·  ✨ Agregado por admin  ·  🔴 Stock bajo (≤ 5 unidades)");
+        lblLeyenda.setStyle("-fx-font-size: 11px; -fx-text-fill: #6b6890; -fx-padding: 0 0 4 0;");
+        contenedor.getChildren().add(lblLeyenda);
+ 
+        java.util.List<Producto> todosProductos = new java.util.ArrayList<>(CatalogoStore.getTodos());
+        if (todosProductos.isEmpty()) {
+            Label vacio = new Label("No hay productos en el inventario.");
             vacio.setStyle("-fx-font-size: 13px; -fx-text-fill: #8F8AA8; -fx-padding: 8 0 0 0;");
             contenedor.getChildren().add(vacio);
+        } else {
+            // Separar base de extras para el badge visual
+            java.util.Set<Integer> idExtras = CatalogoStore.getExtras()
+                .stream().map(Producto::getId)
+                .collect(java.util.stream.Collectors.toSet());
+            for (Producto prod : todosProductos) {
+                boolean esExtra = idExtras.contains(prod.getId());
+                contenedor.getChildren().add(crearFilaInventario(prod, esExtra, contenedor));
+            }
+        }
+ 
+        // ── Separador ─────────────────────────────────────────────────────────
+        //javafx.scene.control.Separator sepProveedores = new javafx.scene.control.Separator();
+        //sepProveedores.setStyle("-fx-background-color: rgba(86,74,181,0.2); -fx-padding: 10 0 10 0;");
+        //contenedor.getChildren().add(sepProveedores);
+ 
+        // ── Catálogo de proveedores (con restock real) ────────────────────────
+        //contenedor.getChildren().add(crearPanelProveedores());
+    }
+ 
+    
+      private String copiarImagenAProductImg(File origen) {
+        try {
+            Path dirProdImg = Paths.get("prodimg");
+            if (!Files.exists(dirProdImg)) {
+                Files.createDirectories(dirProdImg);
+            }
+            // Nombre de destino: original con timestamp para evitar colisiones
+            String ext  = origen.getName().contains(".")
+                ? origen.getName().substring(origen.getName().lastIndexOf('.')) : ".png";
+            String base = origen.getName().contains(".")
+                ? origen.getName().substring(0, origen.getName().lastIndexOf('.')) : origen.getName();
+            String nombreDest = base + "_" + System.currentTimeMillis() + ext;
+            Path destino = dirProdImg.resolve(nombreDest);
+            Files.copy(origen.toPath(), destino, StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("[Admin] Imagen copiada → " + destino.toAbsolutePath());
+            return destino.toAbsolutePath().toString();
+        } catch (Exception ex) {
+            System.err.println("⚠ [Admin] Error copiando imagen: " + ex.getMessage());
+            return null;
         }
     }
  
+    /**
+     * Construye el panel de "Catálogo de Proveedores" (simulación).
+     * Muestra productos disponibles de supuestos proveedores con precio mayorista
+     * y la opción de "generar una orden de compra" (simulada, solo visual).
+     */
+    private VBox crearPanelProveedores() {
+ 
+        // productId = ID del producto en CatalogoStore al que corresponde la orden.
+        // 0 = sin producto equivalente en catálogo actual (orden solo referencial).
+        record ItemProveedor(String proveedor, String producto, String categoria,
+                             double precioMayorista, int minPedido, String pais, int productId) {}
+ 
+        java.util.List<ItemProveedor> catalogo = java.util.List.of(
+            new ItemProveedor("Fender Musical Instruments",
+                "Stratocaster Player Series (lote)", "Guitarras", 1_650_000, 3, "🇺🇸 EE.UU.", 1),
+            new ItemProveedor("Gibson Brands Inc.",
+                "Les Paul Standard '50s (lote)", "Guitarras", 4_800_000, 2, "🇺🇸 EE.UU.", 2),
+            new ItemProveedor("Yamaha Corporation",
+                "P-125 Piano Digital (lote)", "Teclados", 1_120_000, 5, "🇯🇵 Japón", 5),
+            new ItemProveedor("Roland Corporation",
+                "FP-90X Stage Piano", "Teclados", 3_200_000, 2, "🇯🇵 Japón", 6),
+            new ItemProveedor("Roland Corporation",
+                "TD-17 Electronic Drum Kit", "Percusión", 2_450_000, 2, "🇯🇵 Japón", 8),
+            new ItemProveedor("Yamaha Corporation",
+                "DTX432K Batería Electrónica", "Percusión", 1_890_000, 3, "🇯🇵 Japón", 9),
+            new ItemProveedor("Selmer Paris",
+                "Serie III Alto Saxofón", "Vientos", 8_200_000, 1, "🇫🇷 Francia", 10),
+            new ItemProveedor("Audio-Technica Corp.",
+                "ATH-M50x Monitor Headphones (x10)", "Accesorios", 280_000, 10, "🇯🇵 Japón", 12),
+            new ItemProveedor("Shure Incorporated",
+                "SM58 Vocal Microphone (x5)", "Accesorios", 310_000, 5, "🇺🇸 EE.UU.", 13),
+            new ItemProveedor("Ibanez (Hoshino Gakki)",
+                "RG Series Starter Pack", "Guitarras", 780_000, 4, "🇯🇵 Japón", 3)
+        );
+ 
+        VBox panel = new VBox(16);
+        panel.setStyle(
+            "-fx-background-color: #1E1A2E; -fx-background-radius: 14; " +
+            "-fx-border-color: rgba(86,74,181,0.2); -fx-border-radius: 14; " +
+            "-fx-padding: 22 24 22 24;");
+ 
+        // Encabezado del panel
+        HBox header = new HBox(12);
+        header.setAlignment(Pos.CENTER_LEFT);
+        Label tituloP = new Label("🚢  Catálogo de Proveedores  —  Reabastecimiento");
+        tituloP.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+        HBox.setHgrow(tituloP, Priority.ALWAYS);
+        Label badgeSim = new Label("📋  Genera orden → actualiza stock real");
+        badgeSim.setStyle(
+            "-fx-font-size: 10px; -fx-text-fill: #10b981; " +
+            "-fx-background-color: rgba(16,185,129,0.1); -fx-background-radius: 20; " +
+            "-fx-padding: 3 12 3 12;");
+        header.getChildren().addAll(tituloP, badgeSim);
+ 
+        javafx.scene.control.Separator sepP = new javafx.scene.control.Separator();
+        sepP.setStyle("-fx-background-color: rgba(86,74,181,0.15);");
+ 
+        // Tabla de cabeceras
+        HBox cabecera = new HBox(0);
+        cabecera.setStyle("-fx-padding: 6 0 6 0;");
+        String[] cols = {"Proveedor", "Producto", "Categ.", "P.Mayorista", "Min.Pedido", "Origen", ""};
+        double[] anchos = {160, 0, 90, 100, 90, 90, 110}; // 0 = flexible
+        for (int i = 0; i < cols.length; i++) {
+            Label h = new Label(cols[i]);
+            h.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #6b6890;");
+            if (anchos[i] > 0) { h.setMinWidth(anchos[i]); h.setPrefWidth(anchos[i]); }
+            else { HBox.setHgrow(h, Priority.ALWAYS); }
+            cabecera.getChildren().add(h);
+        }
+ 
+        VBox filas = new VBox(6);
+        for (ItemProveedor item : catalogo) {
+            filas.getChildren().add(crearFilaProveedor(item.proveedor(), item.producto(),
+                item.categoria(), item.precioMayorista(), item.minPedido(), item.pais(),
+                item.productId()));
+        }
+ 
+        panel.getChildren().addAll(header, sepP, cabecera, filas);
+        return panel;
+    }
+ 
+    private HBox crearFilaProveedor(String proveedor, String producto, String categoria,
+                                     double precioMayorista, int minPedido, String pais,
+                                     int productId) {
+        HBox fila = new HBox(0);
+        fila.setAlignment(Pos.CENTER_LEFT);
+        fila.setStyle(
+            "-fx-background-color: #272239; -fx-background-radius: 8; " +
+            "-fx-border-color: rgba(86,74,181,0.12); -fx-border-radius: 8; " +
+            "-fx-padding: 10 14 10 14;");
+ 
+        // Proveedor
+        Label lblProv = new Label(proveedor);
+        lblProv.setStyle("-fx-font-size: 11px; -fx-text-fill: #8F8AA8; -fx-min-width: 160; -fx-pref-width: 160;");
+ 
+        // Producto
+        Label lblProd = new Label(producto);
+        lblProd.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+        lblProd.setWrapText(true);
+        HBox.setHgrow(lblProd, Priority.ALWAYS);
+ 
+        // Categoría
+        String emoji = switch (categoria) {
+            case "Guitarras" -> "🎸"; case "Teclados" -> "🎹";
+            case "Percusión" -> "🥁"; case "Vientos" -> "🎺"; default -> "🎧";
+        };
+        Label lblCat = new Label(emoji + " " + categoria);
+        lblCat.setStyle("-fx-font-size: 10px; -fx-text-fill: #A99CF0; " +
+            "-fx-min-width: 90; -fx-pref-width: 90;");
+ 
+        // Precio mayorista
+        Label lblPrecio = new Label("$" + String.format("%,.0f", precioMayorista));
+        lblPrecio.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #BC7F15; " +
+            "-fx-min-width: 100; -fx-pref-width: 100;");
+ 
+        // Pedido mínimo
+        Label lblMin = new Label("≥ " + minPedido + " und.");
+        lblMin.setStyle("-fx-font-size: 11px; -fx-text-fill: #8F8AA8; " +
+            "-fx-min-width: 90; -fx-pref-width: 90;");
+ 
+        // Origen
+        Label lblPais = new Label(pais);
+        lblPais.setStyle("-fx-font-size: 11px; -fx-text-fill: #8F8AA8; " +
+            "-fx-min-width: 90; -fx-pref-width: 90;");
+ 
+        // Botón "Generar orden" — aplica restock real si hay productId vinculado
+        Button btnOrden = new Button("📦  Generar orden");
+        btnOrden.setStyle(
+            "-fx-background-color: rgba(188,127,21,0.15); -fx-background-radius: 7; " +
+            "-fx-border-color: rgba(188,127,21,0.35); -fx-border-radius: 7; " +
+            "-fx-text-fill: #BC7F15; -fx-font-size: 11px; -fx-cursor: hand; " +
+            "-fx-padding: 5 12 5 12; -fx-min-width: 110;");
+        btnOrden.setOnMouseEntered(e -> btnOrden.setStyle(
+            "-fx-background-color: rgba(188,127,21,0.30); -fx-background-radius: 7; " +
+            "-fx-border-color: #BC7F15; -fx-border-radius: 7; " +
+            "-fx-text-fill: white; -fx-font-size: 11px; -fx-cursor: hand; " +
+            "-fx-padding: 5 12 5 12; -fx-min-width: 110;"));
+        btnOrden.setOnMouseExited(e -> btnOrden.setStyle(
+            "-fx-background-color: rgba(188,127,21,0.15); -fx-background-radius: 7; " +
+            "-fx-border-color: rgba(188,127,21,0.35); -fx-border-radius: 7; " +
+            "-fx-text-fill: #BC7F15; -fx-font-size: 11px; -fx-cursor: hand; " +
+            "-fx-padding: 5 12 5 12; -fx-min-width: 110;"));
+        btnOrden.setOnAction(e -> {
+            if (productId > 0) {
+                // Restock real: añade minPedido unidades al producto vinculado
+                boolean ok = CatalogoStore.restockProducto(productId, minPedido);
+                if (ok) {
+                    mostrarToast("✅ Orden ejecutada: +" + minPedido
+                        + " unidades → \"" + producto + "\"  |  Costo: $"
+                        + String.format("%,.0f", precioMayorista * minPedido));
+                    renderCatalogoAdmin(); // refresca inventario con nuevo stock
+                } else {
+                    mostrarToast("⚠ No se encontró el producto vinculado en el catálogo.");
+                }
+            } else {
+                mostrarToast("📋 Orden registrada: " + minPedido + "x \"" + producto
+                    + "\" → " + proveedor + "  |  Total: $"
+                    + String.format("%,.0f", precioMayorista * minPedido));
+            }
+        });
+ 
+        fila.getChildren().addAll(lblProv, lblProd, lblCat, lblPrecio, lblMin, lblPais, btnOrden);
+ 
+        fila.setOnMouseEntered(ev -> fila.setStyle(
+            "-fx-background-color: #2e2a44; -fx-background-radius: 8; " +
+            "-fx-border-color: rgba(86,74,181,0.25); -fx-border-radius: 8; " +
+            "-fx-padding: 10 14 10 14;"));
+        fila.setOnMouseExited(ev -> fila.setStyle(
+            "-fx-background-color: #272239; -fx-background-radius: 8; " +
+            "-fx-border-color: rgba(86,74,181,0.12); -fx-border-radius: 8; " +
+            "-fx-padding: 10 14 10 14;"));
+ 
+        return fila;
+    }
+    
+    
     private HBox crearFilaProductoAdmin(Producto p) {
         HBox fila = new HBox(16);
         fila.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
@@ -503,6 +1032,158 @@ public class DashboardAdminController {
         fila.getChildren().addAll(emoji, info, lblStock, precio, idLbl);
         return fila;
     }
+ 
+    // ══════════════════════════════════════════════════════════════════════════
+    //  INVENTARIO — Fila con restock (sustituye crearFilaProductoAdmin en UI)
+    // ══════════════════════════════════════════════════════════════════════════
+ 
+    /**
+     * Crea una fila de inventario para un producto (base o extra).
+     * Incluye badge de origen, stock en tiempo real y botón "Reabastecer".
+     *
+     * @param p          producto a mostrar
+     * @param esExtra    true si fue añadido por el admin (extras), false si es base
+     * @param contenedor VBox padre (para refresh parcial tras restock)
+     */
+private VBox crearFilaInventario(Producto p, boolean esExtra, VBox contenedor) {
+        VBox wrapper = new VBox(0);
+ 
+        HBox fila = new HBox(14);
+        fila.setAlignment(Pos.CENTER_LEFT);
+        int stock = p.getVariantes().isEmpty() ? 0 : p.getVariantes().get(0).getStock();
+        boolean stockBajo = stock > 0 && stock <= 5;
+        boolean sinStock  = stock <= 0;
+ 
+        String borderColor = sinStock  ? "rgba(239,68,68,0.45)"
+                           : stockBajo ? "rgba(251,191,36,0.4)"
+                           : "rgba(86,74,181,0.18)";
+        fila.setStyle("-fx-background-color: #1E1A2E; -fx-background-radius: 10; " +
+            "-fx-border-color: " + borderColor + "; -fx-border-radius: 10; -fx-padding: 12 16 12 16;");
+ 
+        // ── Imagen / Emoji categoría (Reemplazo aplicado) ──────────────
+        StackPane imgBox = new StackPane();
+        imgBox.setPrefSize(42, 42);
+        imgBox.setMinSize(42, 42);
+        imgBox.setMaxSize(42, 42);
+        imgBox.setStyle("-fx-background-color: #13111e; -fx-background-radius: 8;");
+
+        javafx.scene.image.ImageView iv = cargarImagenProducto(p, 42, 42);
+        if (iv != null) {
+            javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle(42, 42);
+            clip.setArcWidth(12); 
+            clip.setArcHeight(12);
+            imgBox.setClip(clip);
+            imgBox.getChildren().add(iv);
+        } else {
+            // Fallback al emoji si no hay imagen
+            Label emojiLabel = new Label(switch (p.getIdCategoria()) {
+                case 1 -> "🎸"; case 2 -> "🎹"; case 3 -> "🥁"; case 4 -> "🎺"; default -> "🎧";
+            });
+            emojiLabel.setStyle("-fx-font-size: 20px;");
+            imgBox.getChildren().add(emojiLabel);
+        }
+ 
+        // Info + badge origen
+        VBox info = new VBox(3);
+        HBox.setHgrow(info, Priority.ALWAYS);
+        HBox nombreFila = new HBox(8);
+        nombreFila.setAlignment(Pos.CENTER_LEFT);
+        Label nom = new Label(p.getNombre());
+        nom.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+        Label badgeOrigen = new Label(esExtra ? "✨ Admin" : "🔵 Base");
+        badgeOrigen.setStyle("-fx-font-size: 9px; -fx-padding: 2 7 2 7; " +
+            "-fx-background-radius: 10; -fx-border-radius: 10; " +
+            (esExtra
+                ? "-fx-background-color: rgba(16,185,129,0.12); -fx-text-fill: #10b981; -fx-border-color: rgba(16,185,129,0.3);"
+                : "-fx-background-color: rgba(86,74,181,0.12); -fx-text-fill: #A99CF0; -fx-border-color: rgba(86,74,181,0.3);"));
+        nombreFila.getChildren().addAll(nom, badgeOrigen);
+        Label desc = new Label(p.getDescripcion());
+        desc.setStyle("-fx-font-size: 11px; -fx-text-fill: #8F8AA8;");
+        info.getChildren().addAll(nombreFila, desc);
+ 
+        // Stock badge
+        String stockColor = sinStock ? "#ef4444" : stockBajo ? "#f59e0b" : "#10b981";
+        String stockIcono = sinStock ? "✗" : stockBajo ? "⚠" : "✓";
+        Label lblStock = new Label(stockIcono + " Stock: " + stock);
+        lblStock.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: " + stockColor + ";" +
+            "-fx-background-color: " + stockColor + "22; -fx-background-radius: 6; -fx-padding: 3 10 3 10;");
+        lblStock.setMinWidth(100);
+ 
+        // Variantes count
+        Label lblVars = new Label(p.getVariantes().size() + " var.");
+        lblVars.setStyle("-fx-font-size: 10px; -fx-text-fill: #6b6890;");
+ 
+        // Precio
+        Label precio = new Label("$" + String.format("%,.0f", p.getPrecio()));
+        precio.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #BC7F15;");
+ 
+        // ID
+        Label idLbl = new Label("#" + p.getId());
+        idLbl.setStyle("-fx-font-size: 10px; -fx-text-fill: #6b6890; -fx-min-width: 36;");
+ 
+        // ── Zona de restock (TextField oculto + botón confirmar) ──────────────
+        javafx.scene.control.TextField txtCantidad = new javafx.scene.control.TextField();
+        txtCantidad.setPromptText("Unidades");
+        txtCantidad.setPrefWidth(80); txtCantidad.setMaxWidth(80);
+        txtCantidad.setStyle("-fx-background-color: #272239; -fx-background-radius: 6; " +
+            "-fx-border-color: rgba(86,74,181,0.4); -fx-border-radius: 6; " +
+            "-fx-text-fill: #E9E9ED; -fx-prompt-text-fill: #6b6890; -fx-font-size: 12px;");
+        txtCantidad.setVisible(false); txtCantidad.setManaged(false);
+ 
+        Button btnConfirmarRestock = new Button("✓");
+        btnConfirmarRestock.setStyle("-fx-background-color: #10b981; -fx-background-radius: 6; " +
+            "-fx-text-fill: white; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 5 10 5 10;");
+        btnConfirmarRestock.setVisible(false); btnConfirmarRestock.setManaged(false);
+ 
+        Button btnRestock = new Button("↑ Reabastecer");
+        btnRestock.setStyle("-fx-background-color: rgba(16,185,129,0.14); -fx-background-radius: 7; " +
+            "-fx-border-color: rgba(16,185,129,0.4); -fx-border-radius: 7; " +
+            "-fx-text-fill: #10b981; -fx-font-size: 11px; -fx-cursor: hand; -fx-padding: 5 12 5 12;");
+        btnRestock.setOnMouseEntered(e -> btnRestock.setStyle(
+            "-fx-background-color: rgba(16,185,129,0.28); -fx-background-radius: 7; " +
+            "-fx-border-color: #10b981; -fx-border-radius: 7; " +
+            "-fx-text-fill: white; -fx-font-size: 11px; -fx-cursor: hand; -fx-padding: 5 12 5 12;"));
+        btnRestock.setOnMouseExited(e -> btnRestock.setStyle(
+            "-fx-background-color: rgba(16,185,129,0.14); -fx-background-radius: 7; " +
+            "-fx-border-color: rgba(16,185,129,0.4); -fx-border-radius: 7; " +
+            "-fx-text-fill: #10b981; -fx-font-size: 11px; -fx-cursor: hand; -fx-padding: 5 12 5 12;"));
+ 
+        // Toggle panel de entrada al hacer clic en "Reabastecer"
+        btnRestock.setOnAction(e -> {
+            boolean visible = txtCantidad.isVisible();
+            txtCantidad.setVisible(!visible);    txtCantidad.setManaged(!visible);
+            btnConfirmarRestock.setVisible(!visible); btnConfirmarRestock.setManaged(!visible);
+            if (!visible) { txtCantidad.clear(); txtCantidad.requestFocus(); }
+        });
+ 
+        // Confirmar restock
+        btnConfirmarRestock.setOnAction(e -> {
+            String txt = txtCantidad.getText().trim();
+            try {
+                int n = Integer.parseInt(txt);
+                if (n <= 0) throw new NumberFormatException();
+                boolean ok = CatalogoStore.restockProducto(p.getId(), n);
+                if (ok) {
+                    CatalogoStore.guardar(); 
+                    StockStore.guardarStock();
+                    mostrarToast("✓ Reabastecido: +" + n + " unidades → \"" + p.getNombre() + "\"");
+                    renderCatalogoAdmin(); // refresh completo para que stock se actualice
+                    actualizarOverview();
+                } else {
+                    mostrarToast("⚠ No se pudo reabastecer el producto #" + p.getId());
+                }
+            } catch (NumberFormatException ex) {
+                mostrarToast("⚠ Ingresa un número entero positivo.");
+            }
+        });
+ 
+        // ── Agregando imgBox al HBox principal en lugar de emoji ──────────────
+        fila.getChildren().addAll(imgBox, info, lblVars, lblStock, precio, idLbl,
+                                  txtCantidad, btnConfirmarRestock, btnRestock);
+        wrapper.getChildren().add(fila);
+        return wrapper;
+    }
+ 
     @FXML private void navegarUsuariosAdmin() {
         renderUsuariosAdmin();
         mostrarSeccion(paneUsuariosAdmin, navBtnUsuarios);
@@ -688,12 +1369,11 @@ public class DashboardAdminController {
     // ══════════════════════════════════════════════════════════════════════════
  
     private void actualizarOverview() {
-        int    total      = gestor.getTotalPedidos();
+      int    total      = gestor.getTotalPedidos();
         int    enCola     = gestor.getCantidadEnCola();
         double ingresos   = gestor.getIngresoTotal();
         long   entregados = gestor.getTotalEntregados();
  
-        // Stat-cards
         lblTotalPedidos.setText(String.valueOf(total));
         lblTotalPedidosHint.setText(total == 1 ? "pedido registrado" : "pedidos registrados");
  
@@ -711,6 +1391,7 @@ public class DashboardAdminController {
         renderDesgloseEstados();
         renderColaPendientes();
         renderPedidosRecientes();
+        renderStockAlerta();       // ← LÍNEA NUEVA
     }
  
     @FXML
@@ -791,6 +1472,122 @@ public class DashboardAdminController {
         return fila;
     }
  
+      private VBox stockAlertaContainer = null;
+    
+    private void renderStockAlerta() {
+        // Obtener el VBox raíz del overview (contenido del ScrollPane)
+        if (!(paneOverview.getContent() instanceof VBox rootVBox)) return;
+ 
+        // Remover panel anterior si existe
+        if (stockAlertaContainer != null) {
+            rootVBox.getChildren().remove(stockAlertaContainer);
+        }
+ 
+        java.util.List<StockStore.ProductoStock> bajoStock = StockStore.getBajoStock();
+ 
+        if (bajoStock.isEmpty()) {
+            // Mostrar panel de "todo OK" si había alertas antes
+            stockAlertaContainer = null;
+            return;
+        }
+ 
+        // ── Construir panel ──────────────────────────────────────────────────
+        VBox panel = new VBox(14);
+        panel.setStyle(
+            "-fx-background-color: rgba(239,68,68,0.07); " +
+            "-fx-background-radius: 14; " +
+            "-fx-border-color: rgba(239,68,68,0.3); -fx-border-radius: 14; " +
+            "-fx-padding: 18 20 18 20; " +
+            "-fx-effect: dropshadow(gaussian,rgba(239,68,68,0.08),8,0,0,2);");
+ 
+        // Encabezado
+        HBox header = new HBox(10);
+        header.setAlignment(Pos.CENTER_LEFT);
+        Label titulo = new Label("⚠  Stock bajo — " + bajoStock.size()
+            + " producto" + (bajoStock.size() != 1 ? "s" : "") + " por agotar");
+        titulo.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #ef4444;");
+        HBox.setHgrow(titulo, Priority.ALWAYS);
+ 
+        Label umbralLbl = new Label("Umbral: ≤ " + StockStore.UMBRAL + " und.");
+        umbralLbl.setStyle(
+            "-fx-font-size: 11px; -fx-text-fill: #ef4444; -fx-opacity: 0.7; " +
+            "-fx-background-color: rgba(239,68,68,0.12); -fx-background-radius: 20; " +
+            "-fx-padding: 3 10 3 10;");
+        header.getChildren().addAll(titulo, umbralLbl);
+ 
+        // Separador
+        javafx.scene.control.Separator sep =
+            new javafx.scene.control.Separator();
+        sep.setStyle("-fx-background-color: rgba(239,68,68,0.2);");
+ 
+        // Filas de productos
+        VBox filas = new VBox(8);
+        for (StockStore.ProductoStock ps : bajoStock) {
+            filas.getChildren().add(crearFilaStockAlerta(ps));
+        }
+ 
+        // Botón ir a catálogo
+        Button btnIr = new Button("📦  Gestionar catálogo →");
+        btnIr.setStyle(
+            "-fx-background-color: rgba(239,68,68,0.15); -fx-background-radius: 8; " +
+            "-fx-border-color: rgba(239,68,68,0.4); -fx-border-radius: 8; " +
+            "-fx-text-fill: #ef4444; -fx-font-size: 12px; -fx-cursor: hand; " +
+            "-fx-padding: 8 16 8 16;");
+        btnIr.setOnMouseEntered(e -> btnIr.setStyle(
+            "-fx-background-color: rgba(239,68,68,0.25); -fx-background-radius: 8; " +
+            "-fx-border-color: #ef4444; -fx-border-radius: 8; " +
+            "-fx-text-fill: white; -fx-font-size: 12px; -fx-cursor: hand; " +
+            "-fx-padding: 8 16 8 16;"));
+        btnIr.setOnMouseExited(e -> btnIr.setStyle(
+            "-fx-background-color: rgba(239,68,68,0.15); -fx-background-radius: 8; " +
+            "-fx-border-color: rgba(239,68,68,0.4); -fx-border-radius: 8; " +
+            "-fx-text-fill: #ef4444; -fx-font-size: 12px; -fx-cursor: hand; " +
+            "-fx-padding: 8 16 8 16;"));
+        btnIr.setOnAction(e -> navegarCatalogoAdmin());
+ 
+        panel.getChildren().addAll(header, sep, filas, btnIr);
+        stockAlertaContainer = panel;
+        rootVBox.getChildren().add(panel);
+    }
+ 
+    private HBox crearFilaStockAlerta(StockStore.ProductoStock ps) {
+        HBox fila = new HBox(12);
+        fila.setAlignment(Pos.CENTER_LEFT);
+        fila.setStyle(
+            "-fx-background-color: rgba(239,68,68,0.05); -fx-background-radius: 8; " +
+            "-fx-border-color: rgba(239,68,68,0.15); -fx-border-radius: 8; " +
+            "-fx-padding: 8 12 8 12;");
+ 
+        // Emoji categoría
+        Label emoji = new Label(switch (ps.idCategoria) {
+            case 1 -> "🎸"; case 2 -> "🎹"; case 3 -> "🥁"; case 4 -> "🎺"; default -> "🎧";
+        });
+        emoji.setStyle("-fx-font-size: 18px;");
+ 
+        // Nombre
+        Label nombre = new Label(ps.nombre);
+        nombre.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+        HBox.setHgrow(nombre, Priority.ALWAYS);
+ 
+        // Indicador de stock con barra de calor
+        String color  = ps.stock == 0 ? "#ef4444" : ps.stock <= 2 ? "#f97316" : "#f59e0b";
+        String bg     = ps.stock == 0 ? "rgba(239,68,68,0.18)"
+                      : ps.stock <= 2 ? "rgba(249,115,22,0.18)"
+                      : "rgba(245,158,11,0.18)";
+        Label stockLbl = new Label(ps.stock == 0 ? "⛔  SIN STOCK" : "⚠  " + ps.stock + " und.");
+        stockLbl.setStyle(
+            "-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: " + color + "; " +
+            "-fx-background-color: " + bg + "; -fx-background-radius: 20; " +
+            "-fx-padding: 3 12 3 12;");
+ 
+        // ID del producto
+        Label idLbl = new Label("ID #" + ps.id);
+        idLbl.setStyle("-fx-font-size: 10px; -fx-text-fill: #6b6890;");
+ 
+        fila.getChildren().addAll(emoji, nombre, idLbl, stockLbl);
+        return fila;
+    }
+    
     // ── Pedidos recientes (últimos 5) ─────────────────────────────────────────
     private void renderPedidosRecientes() {
         recentContainer.getChildren().clear();

@@ -12,3 +12,13 @@
 5|3|Fender Telecaster American Pro II|7200000.00|6|3-Color Sunburst|0.00|1
 6|5|Yamaha P-125 Piano Digital|2199000.00|7|Negro|0.00|1
 6|4|Fender Precision Bass Player|3299000.00|-1||0.00|1
+7|1|Fender Stratocaster Player|2899000.00|1|Sunburst|0.00|1
+7|2|Gibson Les Paul Standard '50s|8499000.00|4|Gold Top|0.00|1
+8|6|Roland FP-90X Piano Digital|5499000.00|9|Negro|0.00|1
+9|4|Fender Precision Bass Player|3299000.00|-1||0.00|1
+10|3|Fender Telecaster American Pro II|7200000.00|6|3-Color Sunburst|0.00|1
+11|10|Saxofón Alto Yamaha YAS-280|3499000.00|19|Lacado Dorado|0.00|3
+12|10|Saxofón Alto Yamaha YAS-280|3499000.00|19|Lacado Dorado|0.00|3
+13|10|Saxofón Alto Yamaha YAS-280|3499000.00|19|Lacado Dorado|0.00|1
+14|100|Ibanez RG550 Genesis|4850000.00|10000|Estándar|0.00|7
+15|102|Rode NT1 5th Generation|1890000.00|10200|Kit completo + filtro pop|250000.00|2

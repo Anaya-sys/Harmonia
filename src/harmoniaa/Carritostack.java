@@ -42,6 +42,7 @@ public class Carritostack {
         return pila.isEmpty() ? null : pila.peek();
     }
  
+    
    
     public boolean quitar(int idProducto, int idVariante) {
         Deque<ItemCarrito> auxiliar = new ArrayDeque<>();
@@ -58,6 +59,7 @@ public class Carritostack {
             } else {
                 auxiliar.push(item);       
             }
+            System.out.println();
         }
  
       

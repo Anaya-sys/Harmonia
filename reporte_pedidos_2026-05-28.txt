@@ -1,0 +1,195 @@
+══════════════════════════════════════════════════════
+  REPORTE DE PEDIDOS — Harmonia Music Store
+  Generado: 2026-05-28
+══════════════════════════════════════════════════════
+
+  Total pedidos   : 13
+  Ingreso total   : $133.776.000,00
+  En cola (FIFO)  : 3
+  Entregados      : 10
+
+  Desglose por estado:
+    PENDIENTE    → 3 pedidos  ($17.295.000,00)
+    EN_PROCESO   → 0 pedidos  ($0,00)
+    ENVIADO      → 0 pedidos  ($0,00)
+    ENTREGADO    → 10 pedidos  ($116.481.000,00)
+
+──────────────────────────────────────────────────────
+╔═══════════════════════════════════════╗
+  PEDIDO #1
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-23
+  Usuario  : #4
+  Envío a  : Dirección por definir
+  Estado   : ENTREGADO
+╠═══════════════════════════════════════╣
+  • Fender Telecaster American Pro II [3-Color Sunburst] x1 | $7200000.0 c/u | subtotal: $7200000.0
+  • Fender Stratocaster Player [Sunburst] x1 | $2899000.0 c/u | subtotal: $2899000.0
+  • Gibson Les Paul Standard '50s [Gold Top] x1 | $8499000.0 c/u | subtotal: $8499000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $18.598.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #2
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-23
+  Usuario  : #4
+  Envío a  : Dirección por definir
+  Estado   : ENTREGADO
+╠═══════════════════════════════════════╣
+  • Roland JUNO-DS61 Sintetizador x5 | $3799000.0 c/u | subtotal: $1.8995E7
+  • Roland FP-90X Piano Digital [Negro] x1 | $5499000.0 c/u | subtotal: $5499000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $24.494.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #3
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-23
+  Usuario  : #4
+  Envío a  : Dirección por definir
+  Estado   : ENTREGADO
+╠═══════════════════════════════════════╣
+  • Fender Telecaster American Pro II [3-Color Sunburst] x1 | $7200000.0 c/u | subtotal: $7200000.0
+  • Fender Precision Bass Player x1 | $3299000.0 c/u | subtotal: $3299000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $10.499.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #4
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-24
+  Usuario  : #4
+  Envío a  : Dirección por definir
+  Estado   : ENTREGADO
+╠═══════════════════════════════════════╣
+  • Fender Telecaster American Pro II [3-Color Sunburst] x1 | $7200000.0 c/u | subtotal: $7200000.0
+  • Fender Stratocaster Player [Sunburst] x1 | $2899000.0 c/u | subtotal: $2899000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $10.099.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #5
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-25
+  Usuario  : #4
+  Envío a  : Dirección por definir
+  Estado   : ENTREGADO
+╠═══════════════════════════════════════╣
+  • Roland FP-90X Piano Digital [Negro] x1 | $5499000.0 c/u | subtotal: $5499000.0
+  • Fender Telecaster American Pro II [3-Color Sunburst] x1 | $7200000.0 c/u | subtotal: $7200000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $12.699.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #6
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-25
+  Usuario  : #5
+  Envío a  : Dirección por definir
+  Estado   : ENTREGADO
+╠═══════════════════════════════════════╣
+  • Yamaha P-125 Piano Digital [Negro] x1 | $2199000.0 c/u | subtotal: $2199000.0
+  • Fender Precision Bass Player x1 | $3299000.0 c/u | subtotal: $3299000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $5.498.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #7
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-26
+  Usuario  : #3
+  Envío a  : Dirección por definir
+  Estado   : ENTREGADO
+╠═══════════════════════════════════════╣
+  • Fender Stratocaster Player [Sunburst] x1 | $2899000.0 c/u | subtotal: $2899000.0
+  • Gibson Les Paul Standard '50s [Gold Top] x1 | $8499000.0 c/u | subtotal: $8499000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $11.398.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #8
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-28
+  Usuario  : #3
+  Envío a  : Dirección por definir
+  Estado   : ENTREGADO
+╠═══════════════════════════════════════╣
+  • Roland FP-90X Piano Digital [Negro] x1 | $5499000.0 c/u | subtotal: $5499000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $5.499.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #9
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-28
+  Usuario  : #3
+  Envío a  : Dirección por definir
+  Estado   : PENDIENTE
+╠═══════════════════════════════════════╣
+  • Fender Precision Bass Player x1 | $3299000.0 c/u | subtotal: $3299000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $3.299.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #10
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-28
+  Usuario  : #3
+  Envío a  : Dirección por definir
+  Estado   : ENTREGADO
+╠═══════════════════════════════════════╣
+  • Fender Telecaster American Pro II [3-Color Sunburst] x1 | $7200000.0 c/u | subtotal: $7200000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $7.200.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #11
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-28
+  Usuario  : #3
+  Envío a  : Dirección por definir
+  Estado   : ENTREGADO
+╠═══════════════════════════════════════╣
+  • Saxofón Alto Yamaha YAS-280 [Lacado Dorado] x3 | $3499000.0 c/u | subtotal: $1.0497E7
+╠═══════════════════════════════════════╣
+  TOTAL    : $10.497.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #12
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-28
+  Usuario  : #3
+  Envío a  : Dirección por definir
+  Estado   : PENDIENTE
+╠═══════════════════════════════════════╣
+  • Saxofón Alto Yamaha YAS-280 [Lacado Dorado] x3 | $3499000.0 c/u | subtotal: $1.0497E7
+╠═══════════════════════════════════════╣
+  TOTAL    : $10.497.000,00
+╚═══════════════════════════════════════╝
+
+╔═══════════════════════════════════════╗
+  PEDIDO #13
+╠═══════════════════════════════════════╣
+  Fecha    : 2026-05-28
+  Usuario  : #3
+  Envío a  : Dirección por definir
+  Estado   : PENDIENTE
+╠═══════════════════════════════════════╣
+  • Saxofón Alto Yamaha YAS-280 [Lacado Dorado] x1 | $3499000.0 c/u | subtotal: $3499000.0
+╠═══════════════════════════════════════╣
+  TOTAL    : $3.499.000,00
+╚═══════════════════════════════════════╝
+
+══════════════════════════════════════════════════════

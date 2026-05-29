@@ -43,8 +43,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 public class DashboardController {
-
-       // ── SIDEBAR ────────────────────────────────────────────────────────────────
+      // ── SIDEBAR ────────────────────────────────────────────────────────────────
     @FXML private VBox  sidebar;
     @FXML private HBox  logoBox;
     @FXML private VBox  userTextBox;
@@ -239,9 +238,9 @@ public class DashboardController {
     // ══════════════════════════════════════════════════════════════════════════
     @FXML
     public void initialize() {
-        cargarCatalogoDatos();
         cargarDatosUsuario();
         iniciarComboOrdenar();
+        CatalogoStore.inicializarBaseSiVacio();
         iniciarSliders();
         catTodas.setStyle(ESTILO_FILTRO_ACTIVO);
         for (Button b : List.of(catGuitarras, catTeclados, catPercusion, catVientos, catAccesorios))
@@ -256,6 +255,19 @@ public class DashboardController {
         inicializarSidebar();
         construirHeroBanner();
         construirCategoriasBar();
+        
+        CatalogoStore.addChangeListener(() -> {
+        javafx.application.Platform.runLater(() -> {
+            renderCatalogo(); 
+            cargarProductosDestacadosInicio(); 
+        });
+    });
+        catalogo.clear();
+        catalogo.addAll(CatalogoStore.getBase());
+        PedidoStore.inicializarDemo(catalogo);
+        cargarDatosUsuario();
+        iniciarComboOrdenar();
+        iniciarSliders();
     }
  
  
@@ -392,26 +404,54 @@ public class DashboardController {
             "Micrófono de condensador de lado largo para grabación", 679000, 5, 5);
  
         catalogo.addAll(List.of(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14));
+        StockStore.inicializarBase(catalogo);
+        // Registrar en CatalogoStore para que el panel admin acceda al catálogo base
+        CatalogoStore.registrarBase(catalogo);
+        PedidoStore.inicializarDemo(catalogo);
     }
  
     // ══════════════════════════════════════════════════════════════════════════
     // HELPER: imagen con fallback null
     // ══════════════════════════════════════════════════════════════════════════
     private ImageView cargarImagenProducto(Producto p, double ancho, double alto) {
+        // 1. Imágenes del catálogo base (classpath: prodimg/pN_xxx.png)
         String ruta = IMG_PRODUCTO.get(p.getId());
-        if (ruta == null) return null;
-        try {
-            var stream = getClass().getResourceAsStream(ruta);
-            if (stream == null) return null;
-            Image img = new Image(stream, ancho, alto, true, true);
-            if (img.isError()) return null;
-            ImageView iv = new ImageView(img);
-            iv.setFitWidth(ancho);
-            iv.setFitHeight(alto);
-            iv.setPreserveRatio(true);
-            iv.setSmooth(true);
-            return iv;
-        } catch (Exception ex) { return null; }
+        if (ruta != null) {
+            try {
+                var stream = getClass().getResourceAsStream(ruta);
+                if (stream != null) {
+                    Image img = new Image(stream, ancho, alto, true, true);
+                    if (!img.isError()) {
+                        ImageView iv = new ImageView(img);
+                        iv.setFitWidth(ancho); iv.setFitHeight(alto);
+                        iv.setPreserveRatio(true); iv.setSmooth(true);
+                        return iv;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        // 2. Imágenes de productos admin (archivo en disco: prodimg/)
+        // Soporta tanto ruta relativa "prodimg/x.png" como ruta absoluta (legado).
+        String adminPath = CatalogoStore.getImagenAdmin(p.getId());
+        if (adminPath != null && !adminPath.isBlank()) {
+            try {
+                java.io.File f = new java.io.File(adminPath);
+                // Si la ruta es relativa, resolverla desde el directorio de trabajo
+                if (!f.isAbsolute()) {
+                    f = new java.io.File(System.getProperty("user.dir"), adminPath);
+                }
+                if (f.exists()) {
+                    Image img = new Image(f.toURI().toString(), ancho, alto, true, true);
+                    if (!img.isError()) {
+                        ImageView iv = new ImageView(img);
+                        iv.setFitWidth(ancho); iv.setFitHeight(alto);
+                        iv.setPreserveRatio(true); iv.setSmooth(true);
+                        return iv;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        return null;
     }
  
     private void cargarDatosUsuario() {
@@ -716,16 +756,17 @@ private void cerrarDetalle() {
         starsRow.setAlignment(Pos.CENTER_LEFT);
         Label estrellas = new Label("★★★★☆  4.2  ·  (124 reseñas)");
         estrellas.setStyle("-fx-font-size: 13px; -fx-text-fill: #f59e0b;");
-        Label dispBadge = new Label(p.estaDisponible() ? "✓  En stock" : "✗  Sin stock");
-        dispBadge.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; " +
-            (p.estaDisponible()
-                ? "-fx-text-fill: #10b981; -fx-background-color: rgba(16,185,129,0.12); "
-                : "-fx-text-fill: #ef4444; -fx-background-color: rgba(239,68,68,0.12); ") +
-            "-fx-background-radius: 6; -fx-padding: 3 10 3 10;");
-        starsRow.getChildren().addAll(estrellas, dispBadge);
         // Badge de stock bajo en el panel de detalle
         int stockDetalle = calcularStockTotal(p);
-        if (p.estaDisponible() && stockDetalle > 0 && stockDetalle <= 6) {
+        boolean agotadoDet = (stockDetalle == 0);
+        Label dispBadge = new Label(agotadoDet ? "✗  Agotado" : "✓  En stock");
+        dispBadge.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; " +
+            (agotadoDet
+                ? "-fx-text-fill: #ef4444; -fx-background-color: rgba(239,68,68,0.12); "
+                : "-fx-text-fill: #10b981; -fx-background-color: rgba(16,185,129,0.12); ") +
+            "-fx-background-radius: 6; -fx-padding: 3 10 3 10;");
+        starsRow.getChildren().addAll(estrellas, dispBadge);
+        if (!agotadoDet && stockDetalle <= 6) {
             Label badgeUlt = new Label("🔥  ¡Solo quedan " + stockDetalle + " unidades disponibles!");
             badgeUlt.setStyle(
                 "-fx-background-color: rgba(239,68,68,0.12); -fx-background-radius: 8; " +
@@ -827,7 +868,10 @@ private void cerrarDetalle() {
             if (cantidad[0] > 1) { cantidad[0]--; lblCantidad.setText(String.valueOf(cantidad[0])); }
         });
         btnMas.setOnAction(e -> {
-            cantidad[0]++; lblCantidad.setText(String.valueOf(cantidad[0]));
+            // No permitir superar el stock disponible
+            if (stockDetalle <= 0 || cantidad[0] < stockDetalle) {
+                cantidad[0]++; lblCantidad.setText(String.valueOf(cantidad[0]));
+            }
         });
         cantidadRow.getChildren().addAll(lblCantTitulo, btnMenos, lblCantidad, btnMas);
  
@@ -835,28 +879,42 @@ private void cerrarDetalle() {
         HBox botonesAccion = new HBox(12);
         botonesAccion.setAlignment(Pos.CENTER_LEFT);
  
-        Button btnAgregarDet = new Button("🛒   Agregar al carrito");
-        btnAgregarDet.setPrefHeight(46);
-        btnAgregarDet.setPrefWidth(220);
-        btnAgregarDet.setStyle(
-            "-fx-background-color: #564AB5; -fx-background-radius: 10; " +
-            "-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; " +
-            "-fx-cursor: hand; " +
-            "-fx-effect: dropshadow(gaussian,rgba(86,74,181,0.4),14,0,0,5);");
-        btnAgregarDet.setOnMouseEntered(e -> btnAgregarDet.setStyle(
-            "-fx-background-color: #6c5ce7; -fx-background-radius: 10; " +
-            "-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; " +
-            "-fx-cursor: hand; -fx-effect: dropshadow(gaussian,rgba(86,74,181,0.6),18,0,0,6);"));
-        btnAgregarDet.setOnMouseExited(e -> btnAgregarDet.setStyle(
-            "-fx-background-color: #564AB5; -fx-background-radius: 10; " +
-            "-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; " +
-            "-fx-cursor: hand; -fx-effect: dropshadow(gaussian,rgba(86,74,181,0.4),14,0,0,5);"));
-        btnAgregarDet.setOnAction(e -> {
-            Variante v = p.getVariantes().isEmpty() ? null : p.getVariantes().get(0);
-            for (int i = 0; i < cantidad[0]; i++)
-                carrito.agregar(new ItemCarrito(p, v, 1));
-            mostrarToast("🛒 " + cantidad[0] + "x \"" + p.getNombre() + "\" añadido al carrito.");
-        });
+        Button btnAgregarDet;
+        if (agotadoDet) {
+            btnAgregarDet = new Button("⛔  Producto agotado");
+            btnAgregarDet.setPrefHeight(46);
+            btnAgregarDet.setPrefWidth(240);
+            btnAgregarDet.setStyle(
+                "-fx-background-color: rgba(100,100,120,0.3); -fx-background-radius: 10; " +
+                "-fx-text-fill: #6b6890; -fx-font-size: 14px; -fx-font-weight: bold; " +
+                "-fx-cursor: default;");
+            btnAgregarDet.setDisable(true);
+            btnMenos.setDisable(true);
+            btnMas.setDisable(true);
+        } else {
+            btnAgregarDet = new Button("🛒   Agregar al carrito");
+            btnAgregarDet.setPrefHeight(46);
+            btnAgregarDet.setPrefWidth(220);
+            btnAgregarDet.setStyle(
+                "-fx-background-color: #564AB5; -fx-background-radius: 10; " +
+                "-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; " +
+                "-fx-cursor: hand; " +
+                "-fx-effect: dropshadow(gaussian,rgba(86,74,181,0.4),14,0,0,5);");
+            btnAgregarDet.setOnMouseEntered(e -> btnAgregarDet.setStyle(
+                "-fx-background-color: #6c5ce7; -fx-background-radius: 10; " +
+                "-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; " +
+                "-fx-cursor: hand; -fx-effect: dropshadow(gaussian,rgba(86,74,181,0.6),18,0,0,6);"));
+            btnAgregarDet.setOnMouseExited(e -> btnAgregarDet.setStyle(
+                "-fx-background-color: #564AB5; -fx-background-radius: 10; " +
+                "-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; " +
+                "-fx-cursor: hand; -fx-effect: dropshadow(gaussian,rgba(86,74,181,0.4),14,0,0,5);"));
+            btnAgregarDet.setOnAction(e -> {
+                Variante v = p.getVariantes().isEmpty() ? null : p.getVariantes().get(0);
+                for (int i = 0; i < cantidad[0]; i++)
+                    carrito.agregar(new ItemCarrito(p, v, 1));
+                mostrarToast("🛒 " + cantidad[0] + "x \"" + p.getNombre() + "\" añadido al carrito.");
+            });
+        }
  
         Button btnDeseosDet = new Button(deseos.contiene(p.getId()) ? "♥  En deseos" : "♡  Guardar");
         btnDeseosDet.setPrefHeight(46);
@@ -1182,113 +1240,135 @@ private void cerrarDetalle() {
     // ══════════════════════════════════════════════════════════════════════════
     // TARJETA CATÁLOGO — click abre la vista detalle
     // ══════════════════════════════════════════════════════════════════════════
-    private VBox crearTarjetaProducto(Producto p) {
-        VBox card = new VBox(0);
-        card.setPrefWidth(CARD_WIDTH); card.setMaxWidth(CARD_WIDTH); card.setMinWidth(CARD_WIDTH);
-        card.setStyle(
-            "-fx-background-color: #1E1A2E; -fx-background-radius: 12; " +
-            "-fx-border-color: rgba(86,74,181,0.2); -fx-border-radius: 12; " +
-            "-fx-cursor: hand; -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.35),12,0,0,4);");
- 
-        // Imagen
-        StackPane imgZone = new StackPane();
-        imgZone.setPrefHeight(IMG_HEIGHT); imgZone.setMinHeight(IMG_HEIGHT); imgZone.setMaxHeight(IMG_HEIGHT);
-        imgZone.setStyle("-fx-background-color: #13111e; -fx-background-radius: 12 12 0 0;");
- 
-        ImageView iv = cargarImagenProducto(p, CARD_WIDTH, IMG_HEIGHT);
-        if (iv != null) {
-            Rectangle clip = new Rectangle(CARD_WIDTH, IMG_HEIGHT);
-            clip.setArcWidth(24); clip.setArcHeight(24);
-            imgZone.setClip(clip);
-            imgZone.getChildren().add(iv);
-        } else {
-            Label lblEmoji = new Label(getEmojiCategoria(p.getIdCategoria()));
-            lblEmoji.setStyle("-fx-font-size: 48px;");
-            imgZone.getChildren().add(lblEmoji);
-        }
- 
-        // Badge stock
-        if (p.estaDisponible()) {
-            Label badge = new Label("✓ Stock");
-            badge.setStyle(
-                "-fx-background-color: rgba(16,185,129,0.18); -fx-background-radius: 6; " +
-                "-fx-border-color: rgba(16,185,129,0.35); -fx-border-radius: 6; " +
-                "-fx-text-fill: #10b981; -fx-font-size: 10px; -fx-font-weight: bold; -fx-padding: 3 8 3 8;");
-            VBox bw = new VBox(badge); bw.setStyle("-fx-padding: 8 0 0 8;");
-            StackPane.setAlignment(bw, Pos.TOP_LEFT);
-            imgZone.getChildren().add(bw);
-        }
+private VBox crearTarjetaProducto(Producto p) {
+    VBox card = new VBox(0);
+    card.setPrefWidth(CARD_WIDTH); card.setMaxWidth(CARD_WIDTH); card.setMinWidth(CARD_WIDTH);
+    card.setStyle(
+        "-fx-background-color: #1E1A2E; -fx-background-radius: 12; " +
+        "-fx-border-color: rgba(86,74,181,0.2); -fx-border-radius: 12; " +
+        "-fx-cursor: hand; -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.35),12,0,0,4);");
 
-        // Badge "Últimas X unidades" cuando el stock es bajo (≤ 6)
-        int stockTotal = calcularStockTotal(p);
-        if (p.estaDisponible() && stockTotal > 0 && stockTotal <= 6) {
-            Label badgePoco = new Label("🔥 ¡Últimas " + stockTotal + " unidades!");
-            badgePoco.setStyle(
-                "-fx-background-color: rgba(239,68,68,0.85); -fx-background-radius: 6; " +
-                "-fx-text-fill: white; -fx-font-size: 9.5px; -fx-font-weight: bold; " +
-                "-fx-padding: 3 8 3 8;");
-            VBox bwPoco = new VBox(badgePoco);
-            bwPoco.setStyle("-fx-padding: 0 0 8 0;");
-            StackPane.setAlignment(bwPoco, Pos.BOTTOM_LEFT);
-            imgZone.getChildren().add(bwPoco);
-        }
- 
-        // Botón deseo
-        Button btnDeseo = new Button(deseos.contiene(p.getId()) ? "♥" : "♡");
-        btnDeseo.setStyle(
-            "-fx-background-color: rgba(13,13,20,0.7); -fx-background-radius: 50%; " +
-            "-fx-text-fill: " + (deseos.contiene(p.getId()) ? "#ef4444" : "#8F8AA8") + "; " +
-            "-fx-font-size: 13px; -fx-cursor: hand; -fx-padding: 4 6 4 6; " +
-            "-fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 50%;");
-        btnDeseo.setOnAction(e -> {
-            if (deseos.contiene(p.getId())) deseos.quitar(p.getId());
-            else deseos.agregar(p);
-            e.consume(); // no propagar al click del card
-            renderCatalogo();
-        });
-        VBox dw = new VBox(btnDeseo); dw.setStyle("-fx-padding: 8 8 0 0;");
-        StackPane.setAlignment(dw, Pos.TOP_RIGHT);
-        imgZone.getChildren().add(dw);
- 
-        // Cuerpo texto
-        VBox body = new VBox(5);
-        body.setStyle("-fx-padding: 12 14 14 14;");
- 
-        Categoria cat = getCategoriaById(p.getIdCategoria());
-        Label lblCat = new Label(cat != null ? cat.getNombre().toUpperCase() : "PRODUCTO");
-        lblCat.setStyle("-fx-font-size: 11.5px; -fx-font-weight: bold; -fx-text-fill: #8b7cf8;");
-        lblCat.setPrefHeight(18); lblCat.setMinHeight(18); lblCat.setMaxHeight(18);
- 
-        Label lblNombre = new Label(p.getNombre());
-        lblNombre.setPrefHeight(NOMBRE_HEIGHT); lblNombre.setMinHeight(NOMBRE_HEIGHT); lblNombre.setMaxHeight(NOMBRE_HEIGHT);
-        lblNombre.setPrefWidth(CARD_WIDTH - 28); lblNombre.setMaxWidth(CARD_WIDTH - 28);
-        lblNombre.setWrapText(true);
-        lblNombre.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
- 
-        Label lblDesc = new Label(p.getDescripcion());
-        lblDesc.setPrefHeight(DESC_HEIGHT); lblDesc.setMinHeight(DESC_HEIGHT); lblDesc.setMaxHeight(DESC_HEIGHT);
-        lblDesc.setPrefWidth(CARD_WIDTH - 28); lblDesc.setMaxWidth(CARD_WIDTH - 28);
-        lblDesc.setWrapText(true);
-        lblDesc.setStyle("-fx-font-size: 12.5px; -fx-text-fill: #6b6890;");
- 
-        Region sep = new Region(); sep.setPrefHeight(6);
- 
-        // Precio + ícono carrito
-        HBox precioRow = new HBox(8); precioRow.setAlignment(Pos.CENTER_LEFT);
-        Label lblPrecio = new Label("$" + String.format("%,.0f", p.getPrecio()));
-        lblPrecio.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
-        HBox.setHgrow(lblPrecio, Priority.ALWAYS);
- 
-        boolean yaEnCarrito = carrito.getItems().stream()
-            .anyMatch(it -> it.getProducto().getId() == p.getId());
-        Button btnCarrito = new Button(yaEnCarrito ? "✓" : "🛒");
-        btnCarrito.setPrefSize(36, 36); btnCarrito.setMinSize(36, 36); btnCarrito.setMaxSize(36, 36);
-        String estiloC = (yaEnCarrito
+    // Imagen
+    StackPane imgZone = new StackPane();
+    imgZone.setPrefHeight(IMG_HEIGHT); imgZone.setMinHeight(IMG_HEIGHT); imgZone.setMaxHeight(IMG_HEIGHT);
+    imgZone.setStyle("-fx-background-color: #13111e; -fx-background-radius: 12 12 0 0;");
+
+    ImageView iv = cargarImagenProducto(p, CARD_WIDTH, IMG_HEIGHT);
+    if (iv != null) {
+        Rectangle clip = new Rectangle(CARD_WIDTH, IMG_HEIGHT);
+        clip.setArcWidth(24); clip.setArcHeight(24);
+        imgZone.setClip(clip);
+        imgZone.getChildren().add(iv);
+    } else {
+        Label lblEmoji = new Label(getEmojiCategoria(p.getIdCategoria()));
+        lblEmoji.setStyle("-fx-font-size: 48px;");
+        imgZone.getChildren().add(lblEmoji);
+    }
+
+    // --- LÓGICA DE ALERTA DINÁMICA DE STOCK ---
+    int stockTotal = calcularStockTotal(p);
+
+    // Badge stock general: solo se muestra si hay stock real > 0
+    if (stockTotal > 0) {
+        Label badge = new Label("✓ Stock");
+        badge.setStyle(
+            "-fx-background-color: rgba(16,185,129,0.18); -fx-background-radius: 6; " +
+            "-fx-border-color: rgba(16,185,129,0.35); -fx-border-radius: 6; " +
+            "-fx-text-fill: #10b981; -fx-font-size: 10px; -fx-font-weight: bold; -fx-padding: 3 8 3 8;");
+        VBox bw = new VBox(badge); bw.setStyle("-fx-padding: 8 0 0 8;");
+        StackPane.setAlignment(bw, Pos.TOP_LEFT);
+        imgZone.getChildren().add(bw);
+    }
+
+    if (stockTotal == 0) {
+        // 1. Si llegó a 0: Mostrar badge rojo "⛔ ¡AGOTADO!"
+        Label badgeAgotado = new Label("⛔ ¡AGOTADO!");
+        badgeAgotado.setStyle(
+            "-fx-background-color: rgba(239,68,68,0.95); -fx-background-radius: 6; " +
+            "-fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; " +
+            "-fx-padding: 4 10 4 10;");
+        VBox bwAgotado = new VBox(badgeAgotado);
+        bwAgotado.setStyle("-fx-padding: 0 0 8 0;");
+        StackPane.setAlignment(bwAgotado, Pos.BOTTOM_LEFT);
+        imgZone.getChildren().add(bwAgotado); 
+
+    } else if (stockTotal <= 5) {
+        // 2. Si quedan entre 1 y 5: Mostrar badge naranja dinámico
+        Label badgePoco = new Label("🔥 ¡Últimas " + stockTotal + " unidades!");
+        badgePoco.setStyle(
+            "-fx-background-color: rgba(245,158,11,0.90); -fx-background-radius: 6; " +
+            "-fx-text-fill: white; -fx-font-size: 9.5px; -fx-font-weight: bold; " +
+            "-fx-padding: 3 8 3 8;");
+        VBox bwPoco = new VBox(badgePoco);
+        bwPoco.setStyle("-fx-padding: 0 0 8 0;");
+        StackPane.setAlignment(bwPoco, Pos.BOTTOM_LEFT);
+        imgZone.getChildren().add(bwPoco); 
+    }
+    // -------------------------------------------------
+
+    // Botón deseo
+    Button btnDeseo = new Button(deseos.contiene(p.getId()) ? "♥" : "♡");
+    btnDeseo.setStyle(
+        "-fx-background-color: rgba(13,13,20,0.7); -fx-background-radius: 50%; " +
+        "-fx-text-fill: " + (deseos.contiene(p.getId()) ? "#ef4444" : "#8F8AA8") + "; " +
+        "-fx-font-size: 13px; -fx-cursor: hand; -fx-padding: 4 6 4 6; " +
+        "-fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 50%;");
+    btnDeseo.setOnAction(e -> {
+        if (deseos.contiene(p.getId())) deseos.quitar(p.getId());
+        else deseos.agregar(p);
+        e.consume(); // no propagar al click del card
+        renderCatalogo();
+    });
+    VBox dw = new VBox(btnDeseo); dw.setStyle("-fx-padding: 8 8 0 0;");
+    StackPane.setAlignment(dw, Pos.TOP_RIGHT);
+    imgZone.getChildren().add(dw);
+
+    // Cuerpo texto
+    VBox body = new VBox(5);
+    body.setStyle("-fx-padding: 12 14 14 14;");
+
+    Categoria cat = getCategoriaById(p.getIdCategoria());
+    Label lblCat = new Label(cat != null ? cat.getNombre().toUpperCase() : "PRODUCTO");
+    lblCat.setStyle("-fx-font-size: 11.5px; -fx-font-weight: bold; -fx-text-fill: #8b7cf8;");
+    lblCat.setPrefHeight(18); lblCat.setMinHeight(18); lblCat.setMaxHeight(18);
+
+    Label lblNombre = new Label(p.getNombre());
+    lblNombre.setPrefHeight(NOMBRE_HEIGHT); lblNombre.setMinHeight(NOMBRE_HEIGHT); lblNombre.setMaxHeight(NOMBRE_HEIGHT);
+    lblNombre.setPrefWidth(CARD_WIDTH - 28); lblNombre.setMaxWidth(CARD_WIDTH - 28);
+    lblNombre.setWrapText(true);
+    lblNombre.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+
+    Label lblDesc = new Label(p.getDescripcion());
+    lblDesc.setPrefHeight(DESC_HEIGHT); lblDesc.setMinHeight(DESC_HEIGHT); lblDesc.setMaxHeight(DESC_HEIGHT);
+    lblDesc.setPrefWidth(CARD_WIDTH - 28); lblDesc.setMaxWidth(CARD_WIDTH - 28);
+    lblDesc.setWrapText(true);
+    lblDesc.setStyle("-fx-font-size: 12.5px; -fx-text-fill: #6b6890;");
+
+    Region sep = new Region(); sep.setPrefHeight(6);
+
+    // Precio + ícono carrito
+    HBox precioRow = new HBox(8); precioRow.setAlignment(Pos.CENTER_LEFT);
+    Label lblPrecio = new Label("$" + String.format("%,.0f", p.getPrecio()));
+    lblPrecio.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+    HBox.setHgrow(lblPrecio, Priority.ALWAYS);
+
+    boolean yaEnCarrito = carrito.getItems().stream()
+        .anyMatch(it -> it.getProducto().getId() == p.getId());
+    boolean agotadoCard = (stockTotal == 0);
+    Button btnCarrito = new Button(agotadoCard ? "✗" : yaEnCarrito ? "✓" : "🛒");
+    btnCarrito.setPrefSize(36, 36); btnCarrito.setMinSize(36, 36); btnCarrito.setMaxSize(36, 36);
+    String estiloC = agotadoCard
+        ? "-fx-background-color: rgba(100,100,120,0.35); -fx-border-color: rgba(100,100,120,0.4); " +
+          "-fx-text-fill: #6b6890; -fx-background-radius: 50%; -fx-border-radius: 50%; " +
+          "-fx-font-size: 15px; -fx-cursor: default; -fx-padding: 0;"
+        : (yaEnCarrito
             ? "-fx-background-color: rgba(16,185,129,0.25); -fx-border-color: rgba(16,185,129,0.5); -fx-text-fill: #10b981;"
             : "-fx-background-color: #564AB5; -fx-border-color: transparent; -fx-text-fill: white;") +
-            " -fx-background-radius: 50%; -fx-border-radius: 50%; " +
-            "-fx-font-size: 15px; -fx-cursor: hand; -fx-padding: 0;";
-        btnCarrito.setStyle(estiloC);
+          " -fx-background-radius: 50%; -fx-border-radius: 50%; " +
+          "-fx-font-size: 15px; -fx-cursor: hand; -fx-padding: 0;";
+    btnCarrito.setStyle(estiloC);
+    btnCarrito.setDisable(agotadoCard);
+    if (!agotadoCard) {
         btnCarrito.setOnMouseEntered(e ->
             btnCarrito.setStyle("-fx-background-color: #7c6fe0; -fx-border-color: transparent; -fx-text-fill: white; " +
                 "-fx-background-radius: 50%; -fx-border-radius: 50%; -fx-font-size: 15px; -fx-cursor: hand; -fx-padding: 0; " +
@@ -1301,36 +1381,36 @@ private void cerrarDetalle() {
             e.consume();
             renderCatalogo();
         });
- 
-        precioRow.getChildren().addAll(lblPrecio, btnCarrito);
-        int nv = p.getVariantes().size();
-        Label lblVar = new Label(nv > 0 ? nv + " variante" + (nv > 1 ? "s" : "") : "Producto único");
-        lblVar.setStyle("-fx-font-size: 12px; -fx-text-fill: #6b6890;");
-        lblVar.setPrefHeight(16); lblVar.setMinHeight(16); lblVar.setMaxHeight(16);
- 
-        body.getChildren().addAll(lblCat, lblNombre, lblDesc, sep, precioRow, lblVar);
-        card.getChildren().addAll(imgZone, body);
- 
-        // Hover
-        String cardNormal = "-fx-background-color: #1E1A2E; -fx-background-radius: 12; " +
-            "-fx-border-color: rgba(86,74,181,0.2); -fx-border-radius: 12; -fx-cursor: hand; " +
-            "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.35),12,0,0,4);";
-        String cardHover  = "-fx-background-color: #252540; -fx-background-radius: 12; " +
-            "-fx-border-color: #564AB5; -fx-border-radius: 12; -fx-cursor: hand; " +
-            "-fx-effect: dropshadow(gaussian,rgba(86,74,181,0.35),20,0,0,6);";
-        card.setOnMouseEntered(e -> card.setStyle(cardHover));
-        card.setOnMouseExited(e  -> card.setStyle(cardNormal));
- 
-        // Click en la tarjeta → abre el detalle
-        card.setOnMouseClicked(e -> {
-            // Solo si no se clickeó un botón interno
-            if (!(e.getTarget() instanceof Button)) {
-                abrirDetalle(p);
-            }
-        });
- 
-        return card;
     }
+
+    precioRow.getChildren().addAll(lblPrecio, btnCarrito);
+    int nv = p.getVariantes().size();
+    Label lblVar = new Label(nv > 0 ? nv + " variante" + (nv > 1 ? "s" : "") : "Producto único");
+    lblVar.setStyle("-fx-font-size: 12px; -fx-text-fill: #6b6890;");
+    lblVar.setPrefHeight(16); lblVar.setMinHeight(16); lblVar.setMaxHeight(16);
+
+    body.getChildren().addAll(lblCat, lblNombre, lblDesc, sep, precioRow, lblVar);
+    card.getChildren().addAll(imgZone, body);
+
+    // Hover
+    String cardNormal = "-fx-background-color: #1E1A2E; -fx-background-radius: 12; " +
+        "-fx-border-color: rgba(86,74,181,0.2); -fx-border-radius: 12; -fx-cursor: hand; " +
+        "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.35),12,0,0,4);";
+    String cardHover  = "-fx-background-color: #252540; -fx-background-radius: 12; " +
+        "-fx-border-color: #564AB5; -fx-border-radius: 12; -fx-cursor: hand; " +
+        "-fx-effect: dropshadow(gaussian,rgba(86,74,181,0.35),20,0,0,6);";
+    card.setOnMouseEntered(e -> card.setStyle(cardHover));
+    card.setOnMouseExited(e  -> card.setStyle(cardNormal));
+
+    // Click en la tarjeta → abre el detalle
+    card.setOnMouseClicked(e -> {
+        if (!(e.getTarget() instanceof Button)) {
+            abrirDetalle(p);
+        }
+    });
+
+    return card;
+}
  
     // ══════════════════════════════════════════════════════════════════════════
     // INICIO – HERO BANNER
@@ -1489,50 +1569,89 @@ private void cerrarDetalle() {
     }
  
     private VBox crearMiniCard(Producto p) {
-        VBox card = new VBox(0);
-        card.setPrefWidth(270); card.setMaxWidth(270); card.setMinWidth(270);
-        String cardNormal =
-            "-fx-background-color: #1E1A2E; -fx-background-radius: 14; " +
-            "-fx-border-color: rgba(86,74,181,0.18); -fx-border-radius: 14; -fx-cursor: hand; " +
-            "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),14,0,0,5);";
-        String cardHover =
-            "-fx-background-color: #252540; -fx-background-radius: 14; " +
-            "-fx-border-color: #564AB5; -fx-border-radius: 14; -fx-cursor: hand; " +
-            "-fx-effect: dropshadow(gaussian,rgba(86,74,181,0.4),22,0,0,7);";
-        card.setStyle(cardNormal);
- 
-        // Zona imagen
-        StackPane miniImg = new StackPane();
-        miniImg.setPrefHeight(175); miniImg.setMinHeight(175); miniImg.setMaxHeight(175);
-        miniImg.setStyle("-fx-background-color: #13111e; -fx-background-radius: 14 14 0 0;");
- 
-        ImageView iv = cargarImagenProducto(p, 270, 175);
-        if (iv != null) {
-            Rectangle clip = new Rectangle(270, 175);
-            clip.setArcWidth(28); clip.setArcHeight(28);
-            miniImg.setClip(clip);
-            miniImg.getChildren().add(iv);
-        } else {
-            Label emoji = new Label(getEmojiCategoria(p.getIdCategoria()));
-            emoji.setStyle("-fx-font-size: 44px;");
-            miniImg.getChildren().add(emoji);
-        }
- 
-        // Badge de categoría sobre la imagen
-        Label badgeCat = new Label(getEmojiCategoria(p.getIdCategoria()) + "  " +
-            getCategoriaById(p.getIdCategoria()) != null
-                ? (getCategoriaById(p.getIdCategoria()) != null
-                    ? getCategoriaById(p.getIdCategoria()).getNombre() : "")
-                : "");
-        badgeCat.setStyle(
-            "-fx-background-color: rgba(0,0,0,0.55); -fx-background-radius: 6; " +
-            "-fx-text-fill: #E9E9ED; -fx-font-size: 9px; -fx-padding: 3 8 3 8;");
-        StackPane.setAlignment(badgeCat, Pos.TOP_LEFT);
-        badgeCat.setTranslateX(10); badgeCat.setTranslateY(10);
- 
-        // Botón carrito circular sobre imagen
-        Button btnC = new Button("🛒");
-        btnC.setPrefSize(36, 36); btnC.setMinSize(36, 36); btnC.setMaxSize(36, 36);
+    VBox card = new VBox(0);
+    card.setPrefWidth(270); card.setMaxWidth(270); card.setMinWidth(270);
+    String cardNormal =
+        "-fx-background-color: #1E1A2E; -fx-background-radius: 14; " +
+        "-fx-border-color: rgba(86,74,181,0.18); -fx-border-radius: 14; -fx-cursor: hand; " +
+        "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),14,0,0,5);";
+    String cardHover =
+        "-fx-background-color: #252540; -fx-background-radius: 14; " +
+        "-fx-border-color: #564AB5; -fx-border-radius: 14; -fx-cursor: hand; " +
+        "-fx-effect: dropshadow(gaussian,rgba(86,74,181,0.4),22,0,0,7);";
+    card.setStyle(cardNormal);
+
+    // Zona imagen
+    StackPane miniImg = new StackPane();
+    miniImg.setPrefHeight(175); miniImg.setMinHeight(175); miniImg.setMaxHeight(175);
+    miniImg.setStyle("-fx-background-color: #13111e; -fx-background-radius: 14 14 0 0;");
+
+    ImageView iv = cargarImagenProducto(p, 270, 175);
+    if (iv != null) {
+        Rectangle clip = new Rectangle(270, 175);
+        clip.setArcWidth(28); clip.setArcHeight(28);
+        miniImg.setClip(clip);
+        miniImg.getChildren().add(iv);
+    } else {
+        Label emoji = new Label(getEmojiCategoria(p.getIdCategoria()));
+        emoji.setStyle("-fx-font-size: 44px;");
+        miniImg.getChildren().add(emoji);
+    }
+
+    // Badge de categoría sobre la imagen
+    Label badgeCat = new Label(getEmojiCategoria(p.getIdCategoria()) + "  " +
+        (getCategoriaById(p.getIdCategoria()) != null
+            ? getCategoriaById(p.getIdCategoria()).getNombre() : ""));
+    badgeCat.setStyle(
+        "-fx-background-color: rgba(0,0,0,0.55); -fx-background-radius: 6; " +
+        "-fx-text-fill: #E9E9ED; -fx-font-size: 9px; -fx-padding: 3 8 3 8;");
+    StackPane.setAlignment(badgeCat, Pos.TOP_LEFT);
+    badgeCat.setTranslateX(10); badgeCat.setTranslateY(10);
+
+    // ==========================================
+    // NUEVA LÓGICA: ALERTAS DINÁMICAS DE STOCK
+    // ==========================================
+    int stockTotal = calcularStockTotal(p);
+
+    if (stockTotal == 0) {
+        // 1. Si llegó a 0: Mostrar badge rojo "⛔ ¡AGOTADO!"
+        Label badgeAgotado = new Label("⛔ ¡AGOTADO!");
+        badgeAgotado.setStyle(
+            "-fx-background-color: rgba(239,68,68,0.95); -fx-background-radius: 6; " +
+            "-fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold; " +
+            "-fx-padding: 4 10 4 10;");
+        VBox bwAgotado = new VBox(badgeAgotado);
+        bwAgotado.setStyle("-fx-padding: 0 0 8 0;");
+        bwAgotado.setTranslateX(10); // Alinear con el margen izquierdo
+        StackPane.setAlignment(bwAgotado, Pos.BOTTOM_LEFT);
+        miniImg.getChildren().add(bwAgotado); 
+
+    } else if (stockTotal <= 5) {
+        // 2. Si quedan entre 1 y 5: Mostrar badge naranja dinámico
+        Label badgePoco = new Label("🔥 ¡Últimas " + stockTotal + " unidades!");
+        badgePoco.setStyle(
+            "-fx-background-color: rgba(245,158,11,0.90); -fx-background-radius: 6; " +
+            "-fx-text-fill: white; -fx-font-size: 9.5px; -fx-font-weight: bold; " +
+            "-fx-padding: 3 8 3 8;");
+        VBox bwPoco = new VBox(badgePoco);
+        bwPoco.setStyle("-fx-padding: 0 0 8 0;");
+        bwPoco.setTranslateX(10); // Alinear con el margen izquierdo
+        StackPane.setAlignment(bwPoco, Pos.BOTTOM_LEFT);
+        miniImg.getChildren().add(bwPoco); 
+    }
+    // ==========================================
+
+    // Botón carrito circular sobre imagen
+    int stockMini = calcularStockTotal(p);
+    boolean agotadoMini = (stockMini == 0);
+    Button btnC = new Button(agotadoMini ? "✗" : "🛒");
+    btnC.setPrefSize(36, 36); btnC.setMinSize(36, 36); btnC.setMaxSize(36, 36);
+    if (agotadoMini) {
+        btnC.setStyle(
+            "-fx-background-color: rgba(100,100,120,0.45); -fx-background-radius: 50%; " +
+            "-fx-text-fill: #6b6890; -fx-font-size: 15px; -fx-cursor: default; -fx-padding: 0;");
+        btnC.setDisable(true);
+    } else {
         btnC.setStyle(
             "-fx-background-color: #564AB5; -fx-background-radius: 50%; " +
             "-fx-text-fill: white; -fx-font-size: 15px; -fx-cursor: hand; -fx-padding: 0; " +
@@ -1549,49 +1668,51 @@ private void cerrarDetalle() {
             mostrarToast("🛒 \"" + p.getNombre() + "\" añadido al carrito.");
             e.consume();
         });
-        VBox cw = new VBox(btnC); cw.setPadding(new Insets(0, 10, 10, 0));
-        StackPane.setAlignment(cw, Pos.BOTTOM_RIGHT);
- 
-        miniImg.getChildren().addAll(badgeCat, cw);
- 
-        // Body
-        VBox body = new VBox(6); body.setPadding(new Insets(12, 14, 14, 14));
- 
-        Label nombre = new Label(p.getNombre());
-        nombre.setPrefHeight(38); nombre.setMinHeight(38); nombre.setMaxHeight(38);
-        nombre.setPrefWidth(242); nombre.setMaxWidth(242);
-        nombre.setWrapText(true);
-        nombre.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
- 
-        Label desc = new Label(p.getDescripcion());
-        desc.setPrefWidth(242); desc.setMaxWidth(242);
-        desc.setWrapText(true);
-        desc.setPrefHeight(30); desc.setMaxHeight(30);
-        desc.setStyle("-fx-font-size: 11px; -fx-text-fill: #6b6890;");
- 
-        HBox precioRow = new HBox();
-        precioRow.setAlignment(Pos.CENTER_LEFT);
-        Label precio = new Label("$" + String.format("%,.0f", p.getPrecio()));
-        precio.setStyle("-fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #BC7F15;");
-        HBox.setHgrow(precio, Priority.ALWAYS);
- 
-        // Badge disponibilidad
-        Label dispBadge = new Label(p.estaDisponible() ? "En stock" : "Sin stock");
-        dispBadge.setStyle(p.estaDisponible()
-            ? "-fx-font-size: 9px; -fx-text-fill: #10b981; -fx-background-color: rgba(16,185,129,0.12); " +
-              "-fx-background-radius: 4; -fx-padding: 2 6 2 6;"
-            : "-fx-font-size: 9px; -fx-text-fill: #FF6B6B; -fx-background-color: rgba(255,107,107,0.12); " +
-              "-fx-background-radius: 4; -fx-padding: 2 6 2 6;");
- 
-        precioRow.getChildren().addAll(precio, dispBadge);
-        body.getChildren().addAll(nombre, desc, precioRow);
-        card.getChildren().addAll(miniImg, body);
- 
-        card.setOnMouseClicked(e -> { navegarCatalogo(); abrirDetalle(p); });
-        card.setOnMouseEntered(e -> card.setStyle(cardHover));
-        card.setOnMouseExited(e  -> card.setStyle(cardNormal));
-        return card;
     }
+    VBox cw = new VBox(btnC); cw.setPadding(new Insets(0, 10, 10, 0));
+    StackPane.setAlignment(cw, Pos.BOTTOM_RIGHT);
+
+    // Añadimos la categoría y el contenedor del carrito al StackPane
+    miniImg.getChildren().addAll(badgeCat, cw);
+
+    // Body
+    VBox body = new VBox(6); body.setPadding(new Insets(12, 14, 14, 14));
+
+    Label nombre = new Label(p.getNombre());
+    nombre.setPrefHeight(38); nombre.setMinHeight(38); nombre.setMaxHeight(38);
+    nombre.setPrefWidth(242); nombre.setMaxWidth(242);
+    nombre.setWrapText(true);
+    nombre.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+
+    Label desc = new Label(p.getDescripcion());
+    desc.setPrefWidth(242); desc.setMaxWidth(242);
+    desc.setWrapText(true);
+    desc.setPrefHeight(30); desc.setMaxHeight(30);
+    desc.setStyle("-fx-font-size: 11px; -fx-text-fill: #6b6890;");
+
+    HBox precioRow = new HBox();
+    precioRow.setAlignment(Pos.CENTER_LEFT);
+    Label precio = new Label("$" + String.format("%,.0f", p.getPrecio()));
+    precio.setStyle("-fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: #BC7F15;");
+    HBox.setHgrow(precio, Priority.ALWAYS);
+
+    // Badge disponibilidad inferior — basado en stock real
+    Label dispBadge = new Label(agotadoMini ? "Agotado" : "En stock");
+    dispBadge.setStyle(agotadoMini
+        ? "-fx-font-size: 9px; -fx-text-fill: #ef4444; -fx-background-color: rgba(239,68,68,0.15); " +
+          "-fx-background-radius: 4; -fx-padding: 2 6 2 6; -fx-font-weight: bold;"
+        : "-fx-font-size: 9px; -fx-text-fill: #10b981; -fx-background-color: rgba(16,185,129,0.12); " +
+          "-fx-background-radius: 4; -fx-padding: 2 6 2 6;");
+
+    precioRow.getChildren().addAll(precio, dispBadge);
+    body.getChildren().addAll(nombre, desc, precioRow);
+    card.getChildren().addAll(miniImg, body);
+
+    card.setOnMouseClicked(e -> { navegarCatalogo(); abrirDetalle(p); });
+    card.setOnMouseEntered(e -> card.setStyle(cardHover));
+    card.setOnMouseExited(e  -> card.setStyle(cardNormal));
+    return card;
+}
  
     // ══════════════════════════════════════════════════════════════════════════
     // CARRITO
@@ -1650,45 +1771,75 @@ private void cerrarDetalle() {
     }
  
     @FXML private void handleConfirmarPedido() {
-        if (carrito.isEmpty()) return;
-
-        // Guardia de seguridad: si por algún motivo el ID no fue capturado
-        // correctamente al abrir el dashboard, abortamos en lugar de crear
-        // un pedido con idUsuario = 0 que luego aparecería en la vista de nadie
-        // (o en la de otro usuario si el contador de IDs llega a 0).
+     if (carrito.isEmpty()) return;
+ 
         if (currentUserId <= 0) {
             mostrarToast("⚠ Sesión no válida. Por favor, inicia sesión de nuevo.");
             return;
         }
 
+        // ── Validar que ningún ítem del carrito esté agotado ────────────────────
+        List<String> agotados = new ArrayList<>();
+        for (ItemCarrito item : carrito.getItems()) {
+            int stockActual = calcularStockTotal(item.getProducto());
+            if (stockActual == 0) {
+                agotados.add("\"" + item.getProducto().getNombre() + "\"");
+            } else if (item.getCantidad() > stockActual) {
+                agotados.add("\"" + item.getProducto().getNombre() + "\" (solo quedan " + stockActual + ")");
+            }
+        }
+        if (!agotados.isEmpty()) {
+            mostrarToast("⛔ Sin stock: " + String.join(", ", agotados) + ". Retíralos del carrito.");
+            actualizarVistaCarrito(); // refresca el carrito para que se vea el estado actual
+            renderCatalogo();
+            return;
+        }
+ 
         ArrayList<ItemCarrito> items = new ArrayList<>(carrito.getItems());
-
-        // crearPedido() asigna el ID correcto (contadorId++), encola en FIFO,
-        // y llama a guardarEnArchivo() → escribe en harmonia_pedidos.txt e items.txt.
-        // Usamos currentUserId (snapshot de initialize) — NO UserStore.getUsuarioActivo()
-        // — para que un cambio externo del global mutable no afecte este pedido.
+ 
         Pedido pedido = PedidoStore.getGestor()
                                    .crearPedido(currentUserId, items, "Dirección por definir");
-
-        // Mantener el historial local del usuario para la vista del comprador.
-        // Releemos el usuario activo solo para agregarAlHistorial (operación en memoria,
-        // no afecta el idUsuario ya grabado en el pedido).
+ 
         Usuario u = UserStore.getUsuarioActivo();
         if (u != null && u.getId() == currentUserId) u.agregarAlHistorial(pedido);
-
+ 
+        // ── Decrementar stock de cada producto comprado ──────────────────────
+        for (ItemCarrito item : items) {
+            StockStore.decrementar(item.getProducto().getId(), item.getCantidad());
+            
+            // 🛠 FIX: Delegar SIEMPRE la reducción en memoria a la Variante 0 (maestra),
+            // sin importar qué variante haya elegido el usuario en el carrito.
+            Variante varCompra = item.getProducto().getVariantes().isEmpty() 
+                                 ? null 
+                                 : item.getProducto().getVariantes().get(0);
+                                 
+            CatalogoStore.reducirStockCompra(
+                item.getProducto().getId(), varCompra, item.getCantidad());
+        }
+ 
         carrito.vaciar();
         actualizarVistaCarrito();
-        lblCarritoVacio.setText("✅  ¡Pedido #" + pedido.getId() + " confirmado! Revisa tu historial en 📦 Pedidos.");
+        renderCatalogo();
+        cargarProductosDestacadosInicio();
+ 
+        // Calcular el número de pedido relativo al usuario para el mensaje
+        int numPedidoUsuario = PedidoStore.getGestor()
+            .getPorUsuario(currentUserId).size();
+ 
+        lblCarritoVacio.setText("✅  ¡Tu pedido #" + numPedidoUsuario
+            + " confirmado! Revisa tu historial en 📦 Pedidos.");
         lblCarritoVacio.setStyle("-fx-font-size: 13px; -fx-text-fill: #10b981; " +
             "-fx-text-alignment: center; -fx-padding: 40 0 40 0; " +
             "-fx-background-color: rgba(16,185,129,0.06); -fx-background-radius: 12;");
         lblCarritoVacio.setVisible(true);
         lblCarritoVacio.setManaged(true);
-
+ 
         javafx.animation.PauseTransition pausa =
-            new javafx.animation.PauseTransition(Duration.seconds(1.8));
+            new javafx.animation.PauseTransition(javafx.util.Duration.seconds(1.8));
         pausa.setOnFinished(e -> navegarPedidos());
         pausa.play();
+        
+        
     }
  
     // ══════════════════════════════════════════════════════════════════════════
@@ -1709,43 +1860,48 @@ private void cerrarDetalle() {
  
     /** Actualiza toda la vista del historial de pedidos. */
     private void actualizarVistaPedidos() {
-        // Usamos currentUserId (snapshot de initialize) en lugar de volver a leer
-        // UserStore.getUsuarioActivo(), que podría haber cambiado entre sesiones.
-        // Esto garantiza que cada instancia del dashboard muestra SOLO los pedidos
-        // del usuario que la abrió.
-        if (currentUserId <= 0) return;
-
-        // Recargamos del archivo para que los cambios de estado del admin
-        // (avanzar pedido) se reflejen sin necesidad de reiniciar la app.
-        // getPorUsuario filtra estrictamente por currentUserId.
+      if (currentUserId <= 0) return;
+ 
         List<Pedido> historial = PedidoStore.getGestor().getPorUsuario(currentUserId);
  
-    // ── Estadísticas ──────────────────────────────────────────────────────
-    int    totalPedidos = historial.size();
-    double totalGasto   = historial.stream().mapToDouble(Pedido::getTotal).sum();
-    long   totalProds   = historial.stream()
-                            .flatMap(p -> p.getItems().stream())
-                            .mapToLong(ItemCarrito::getCantidad).sum();
+        // ── Estadísticas ──────────────────────────────────────────────────────
+        int    totalPedidos = historial.size();
+        double totalGasto   = historial.stream().mapToDouble(Pedido::getTotal).sum();
+        long   totalProds   = historial.stream()
+                                .flatMap(p -> p.getItems().stream())
+                                .mapToLong(ItemCarrito::getCantidad).sum();
  
-    lblContadorPedidos.setText(totalPedidos + (totalPedidos == 1 ? " pedido" : " pedidos"));
-    lblNumeroPedidos.setText(String.valueOf(totalPedidos));
-    lblTotalGastado.setText("$" + String.format("%,.0f", totalGasto));
-    lblProductosComprados.setText(String.valueOf(totalProds));
+        lblContadorPedidos.setText(totalPedidos + (totalPedidos == 1 ? " pedido" : " pedidos"));
+        lblNumeroPedidos.setText(String.valueOf(totalPedidos));
+        lblTotalGastado.setText("$" + String.format("%,.0f", totalGasto));
+        lblProductosComprados.setText(String.valueOf(totalProds));
  
-    // ── Filtrado por tab activo ───────────────────────────────────────────
-    List<Pedido> filtrados = filtrarPorTab(historial, filtroPedidos);
+        // ── Mapa pedidoId → número relativo al usuario ────────────────────────
+        // Ordenamos el historial completo por id (orden de creación) y
+        // asignamos 1, 2, 3… independientemente del id global del sistema.
+        List<Pedido> sortedHistorial = new java.util.ArrayList<>(historial);
+        sortedHistorial.sort(java.util.Comparator.comparingInt(Pedido::getId));
+        java.util.Map<Integer, Integer> pedidoNumUsuario = new java.util.HashMap<>();
+        for (int i = 0; i < sortedHistorial.size(); i++) {
+            pedidoNumUsuario.put(sortedHistorial.get(i).getId(), i + 1);
+        }
  
-    // ── Mostrar / ocultar estado vacío ────────────────────────────────────
-    boolean vacio = filtrados.isEmpty();
-    lblPedidosVacio.setVisible(vacio);
-    lblPedidosVacio.setManaged(vacio);
+        // ── Filtrado por tab activo ───────────────────────────────────────────
+        List<Pedido> filtrados = filtrarPorTab(historial, filtroPedidos);
  
-    // ── Renderizar tarjetas (más recientes primero) ───────────────────────
-    pedidosItemsContainer.getChildren().clear();
-    List<Pedido> ordenados = new java.util.ArrayList<>(filtrados);
-    java.util.Collections.reverse(ordenados);
-    for (Pedido p : ordenados)
-        pedidosItemsContainer.getChildren().add(crearTarjetaPedido(p));
+        // ── Mostrar / ocultar estado vacío ────────────────────────────────────
+        boolean vacio = filtrados.isEmpty();
+        lblPedidosVacio.setVisible(vacio);
+        lblPedidosVacio.setManaged(vacio);
+ 
+        // ── Renderizar tarjetas (más recientes primero) ───────────────────────
+        pedidosItemsContainer.getChildren().clear();
+        List<Pedido> ordenados = new java.util.ArrayList<>(filtrados);
+        java.util.Collections.reverse(ordenados);
+        for (Pedido p : ordenados) {
+            int numRelativo = pedidoNumUsuario.getOrDefault(p.getId(), p.getId());
+            pedidosItemsContainer.getChildren().add(crearTarjetaPedido(p, numRelativo));
+        }
     }
  
     /** Filtra la lista según el tab activo. */
@@ -1807,8 +1963,8 @@ private void cerrarDetalle() {
     }
  
     /** Construye la tarjeta visual de un pedido. */
-    private VBox crearTarjetaPedido(Pedido pedido) {
-        List<ItemCarrito> items = obtenerItemsPedido(pedido);
+    private VBox crearTarjetaPedido(Pedido pedido, int numUsuario) {
+ List<ItemCarrito> items = obtenerItemsPedido(pedido);
         double total = calcularTotalPedido(pedido);
         EstadoPedido estadoTexto = pedido.getEstado();
  
@@ -1824,15 +1980,14 @@ private void cerrarDetalle() {
         header.setPadding(new Insets(16, 18, 14, 18));
         header.setStyle("-fx-border-color: rgba(86,74,181,0.12); -fx-border-width: 0 0 1 0;");
  
-        Label lblNum = new Label("Pedido  #" + pedido.getId());
+        // Número relativo al usuario (Tu pedido #1, #2, etc.)
+        Label lblNum = new Label("Pedido  #" + numUsuario);
         lblNum.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
  
         Region spacerH = new Region(); HBox.setHgrow(spacerH, Priority.ALWAYS);
  
-        // Badge de estado
         Label estadoBadge = crearBadgeEstado(estadoTexto);
  
-        // Cantidad de ítems
         int totalItems = items.stream().mapToInt(ItemCarrito::getCantidad).sum();
         Label lblItems = new Label(totalItems + " producto" + (totalItems != 1 ? "s" : ""));
         lblItems.setStyle("-fx-font-size: 11px; -fx-text-fill: #6b6890;");
@@ -1854,7 +2009,6 @@ private void cerrarDetalle() {
             HBox fila = new HBox(10);
             fila.setAlignment(Pos.CENTER_LEFT);
  
-            // Imagen del producto (fallback: emoji de categoría)
             StackPane imgBox = new StackPane();
             imgBox.setPrefSize(40, 40); imgBox.setMinSize(40, 40); imgBox.setMaxSize(40, 40);
             imgBox.setStyle("-fx-background-color: #13111e; -fx-background-radius: 6;");
@@ -1865,47 +2019,41 @@ private void cerrarDetalle() {
                 imgBox.setClip(clip);
                 imgBox.getChildren().add(ivItem);
             } else {
-                Label emojiProd = new Label(getEmojiCategoria(it.getProducto().getIdCategoria()));
-                emojiProd.setStyle("-fx-font-size: 18px; -fx-min-width: 28;");
-                imgBox.getChildren().add(emojiProd);
+                Label emojiItem = new Label(getEmojiCategoria(it.getProducto().getIdCategoria()));
+                emojiItem.setStyle("-fx-font-size: 18px;");
+                imgBox.getChildren().add(emojiItem);
             }
  
-            VBox infoItem = new VBox(1); HBox.setHgrow(infoItem, Priority.ALWAYS);
+            VBox itemInfo = new VBox(2); HBox.setHgrow(itemInfo, Priority.ALWAYS);
             Label nomItem = new Label(it.getProducto().getNombre());
-            nomItem.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #D8D6E8;");
-            String vDesc = it.getVariante() != null ? "  ·  " + it.getVariante().getDescripcion() : "";
-            Label detItem = new Label("Cant: " + it.getCantidad() + vDesc);
-            detItem.setStyle("-fx-font-size: 11px; -fx-text-fill: #6b6890;");
-            infoItem.getChildren().addAll(nomItem, detItem);
+            nomItem.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+            String vDesc = it.getVariante() != null ? it.getVariante().getDescripcion() : "Estándar";
+            Label varItem = new Label("x" + it.getCantidad() + "  ·  " + vDesc);
+            varItem.setStyle("-fx-font-size: 11px; -fx-text-fill: #8F8AA8;");
+            itemInfo.getChildren().addAll(nomItem, varItem);
  
             Label subItem = new Label("$" + String.format("%,.0f", it.calcularSubtotal()));
-            subItem.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #A99CF0;");
+            subItem.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #BC7F15;");
  
-            fila.getChildren().addAll(imgBox, infoItem, subItem);
+            fila.getChildren().addAll(imgBox, itemInfo, subItem);
             listaItems.getChildren().add(fila);
         }
         if (items.size() > 2) {
-            Label masItems = new Label("+" + (items.size() - 2) + " producto" + (items.size() - 2 != 1 ? "s" : "") + " más");
-            masItems.setStyle("-fx-font-size: 11px; -fx-text-fill: #564AB5; -fx-padding: 2 0 0 28;");
-            listaItems.getChildren().add(masItems);
-        }
-        if (items.isEmpty()) {
-            Label sinItems = new Label("Sin productos registrados");
-            sinItems.setStyle("-fx-font-size: 12px; -fx-text-fill: #6b6890;");
-            listaItems.getChildren().add(sinItems);
+            Label mas = new Label("+ " + (items.size() - 2) + " producto(s) más");
+            mas.setStyle("-fx-font-size: 11px; -fx-text-fill: #6b6890; -fx-padding: 4 0 0 0;");
+            listaItems.getChildren().add(mas);
         }
  
-        // ── FOOTER: total + botones ───────────────────────────────────────────
-        HBox footer = new HBox(12);
+        // ── FOOTER: total + botones ────────────────────────────────────────────
+        HBox footer = new HBox(10);
         footer.setAlignment(Pos.CENTER_LEFT);
         footer.setPadding(new Insets(12, 18, 16, 18));
-        footer.setStyle("-fx-border-color: rgba(86,74,181,0.12); -fx-border-width: 1 0 0 0;");
+        footer.setStyle("-fx-border-color: rgba(86,74,181,0.1); -fx-border-width: 1 0 0 0;");
  
-        Label lblTotal = new Label("Total:  $" + String.format("%,.0f", total));
-        lblTotal.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #BC7F15;");
+        Label lblTotal = new Label("Total: $" + String.format("%,.0f", total));
+        lblTotal.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
         HBox.setHgrow(lblTotal, Priority.ALWAYS);
  
-        // Botón Reordenar
         Button btnReordenar = new Button("🔄  Reordenar");
         btnReordenar.setStyle(
             "-fx-background-color: transparent; -fx-background-radius: 8; " +
@@ -1921,7 +2069,6 @@ private void cerrarDetalle() {
             "-fx-text-fill: #A99CF0; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 7 14 7 14;"));
         btnReordenar.setOnAction(ev -> reordenarPedido(items));
  
-        // Botón Ver dirección
         Button btnInfo = new Button("📍  " + obtenerDireccionPedido(pedido));
         btnInfo.setStyle(
             "-fx-background-color: transparent; -fx-background-radius: 8; " +
@@ -1932,7 +2079,6 @@ private void cerrarDetalle() {
         footer.getChildren().addAll(lblTotal, btnInfo, btnReordenar);
         card.getChildren().addAll(header, timeline, listaItems, footer);
  
-        // Hover sutil en la tarjeta completa
         card.setOnMouseEntered(ev -> card.setStyle(
             "-fx-background-color: #22203a; -fx-background-radius: 14; " +
             "-fx-border-color: rgba(86,74,181,0.38); -fx-border-radius: 14; " +
@@ -2094,14 +2240,23 @@ private void cerrarDetalle() {
         info.getChildren().addAll(nombre, desc);
         Label precio = new Label("$" + String.format("%,.0f", p.getPrecio()));
         precio.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #BC7F15;");
-        Button btnMover = new Button("🛒");
-        btnMover.setStyle("-fx-background-color: rgba(86,74,181,0.2); -fx-background-radius: 6; " +
-            "-fx-text-fill: #A99CF0; -fx-font-size: 14px; -fx-cursor: hand; -fx-padding: 4 8 4 8;");
-        btnMover.setOnAction(e -> {
-            Variante v = p.getVariantes().isEmpty() ? null : p.getVariantes().get(0);
-            carrito.agregar(new ItemCarrito(p, v, 1));
-            deseos.quitar(p.getId()); actualizarVistaDeseos(); actualizarVistaCarrito();
-        });
+        Button btnMover;
+        int stockDeseos = calcularStockTotal(p);
+        if (stockDeseos == 0) {
+            btnMover = new Button("⛔ Agotado");
+            btnMover.setStyle("-fx-background-color: rgba(100,100,120,0.2); -fx-background-radius: 6; " +
+                "-fx-text-fill: #6b6890; -fx-font-size: 12px; -fx-cursor: default; -fx-padding: 4 8 4 8;");
+            btnMover.setDisable(true);
+        } else {
+            btnMover = new Button("🛒");
+            btnMover.setStyle("-fx-background-color: rgba(86,74,181,0.2); -fx-background-radius: 6; " +
+                "-fx-text-fill: #A99CF0; -fx-font-size: 14px; -fx-cursor: hand; -fx-padding: 4 8 4 8;");
+            btnMover.setOnAction(e -> {
+                Variante v = p.getVariantes().isEmpty() ? null : p.getVariantes().get(0);
+                carrito.agregar(new ItemCarrito(p, v, 1));
+                deseos.quitar(p.getId()); actualizarVistaDeseos(); actualizarVistaCarrito();
+            });
+        }
         Button btnQ = new Button("✕");
         btnQ.setStyle("-fx-background-color: rgba(255,107,107,0.1); -fx-background-radius: 6; " +
             "-fx-text-fill: #FF6B6B; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 4 8 4 8;");

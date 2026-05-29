@@ -2,6 +2,15 @@
 1|4|ENTREGADO|2026-05-23|18598000.00|Dirección por definir
 2|4|ENTREGADO|2026-05-23|24494000.00|Dirección por definir
 3|4|ENTREGADO|2026-05-23|10499000.00|Dirección por definir
-4|4|PENDIENTE|2026-05-24|10099000.00|Dirección por definir
-5|4|PENDIENTE|2026-05-25|12699000.00|Dirección por definir
+4|4|ENTREGADO|2026-05-24|10099000.00|Dirección por definir
+5|4|ENTREGADO|2026-05-25|12699000.00|Dirección por definir
 6|5|ENTREGADO|2026-05-25|5498000.00|Dirección por definir
+7|3|ENTREGADO|2026-05-26|11398000.00|Dirección por definir
+8|3|ENTREGADO|2026-05-28|5499000.00|Dirección por definir
+9|3|EN_PROCESO|2026-05-28|3299000.00|Dirección por definir
+10|3|ENTREGADO|2026-05-28|7200000.00|Dirección por definir
+11|3|ENTREGADO|2026-05-28|10497000.00|Dirección por definir
+12|3|ENVIADO|2026-05-28|10497000.00|Dirección por definir
+13|3|ENTREGADO|2026-05-28|3499000.00|Dirección por definir
+14|3|ENTREGADO|2026-05-28|33950000.00|Dirección por definir
+15|3|PENDIENTE|2026-05-28|4280000.00|Dirección por definir

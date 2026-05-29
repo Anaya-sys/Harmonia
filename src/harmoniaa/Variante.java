@@ -9,7 +9,7 @@ package harmoniaa;
  * @author CARLOS ANAYA
  */
 public class Variante {
-      private int    id;
+   private int    id;
     private String descripcion;
     private double precioExtra;
     private int    stock;
@@ -27,6 +27,15 @@ public class Variante {
         this.stock -= n;
     }
 
+    /**
+     * Incrementa el stock de esta variante (reabastecimiento por admin o proveedor).
+     * @param n unidades a añadir (debe ser > 0)
+     */
+    public void agregarStock(int n) {
+        if (n <= 0) throw new IllegalArgumentException("Cantidad debe ser mayor a 0.");
+        this.stock += n;
+    }
+
     
     public boolean hayStock() {
         return this.stock > 0;
@@ -37,6 +46,10 @@ public class Variante {
     public String getDescripcion() { return descripcion; }
     public double getPrecioExtra() { return precioExtra; }
     public int getStock() { return stock; }
+
+    public void setStock(int stock) {
+        this.stock = stock;
+    }
 
     @Override
     public String toString() {
