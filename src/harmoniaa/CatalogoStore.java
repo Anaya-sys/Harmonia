@@ -171,6 +171,71 @@ private static final String ARCHIVO = "harmonia_catalogo_extra.txt";
     public static synchronized void agregar(Producto p) {
         agregar(p, null);
     }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  ELIMINAR PRODUCTO  ← NUEVA FUNCIONALIDAD
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Elimina un producto del catálogo según su tipo de origen:
+     *
+     *  • Productos EXTRAS (admin): se eliminan de {@code extras}, de
+     *    {@code imagenesAdmin} y de {@code StockStore}, y el archivo
+     *    harmonia_catalogo_extra.txt se reescribe sin ese registro.
+     *
+     *  • Productos BASE (hardcodeados): se eliminan de {@code catalogoBase} y
+     *    de {@code StockStore} solo en memoria (sesión actual).
+     *    No hay archivo que modificar para los base.
+     *
+     * @param idProducto ID del producto a eliminar
+     * @return {@code true} si fue encontrado y eliminado; {@code false} si no existe.
+     */
+    public static synchronized boolean eliminar(int idProducto) {
+        if (!cargado) { cargar(); cargado = true; }
+
+        // ── 1. Buscar en extras ───────────────────────────────────────────────
+        boolean eliminadoDeExtras = extras.removeIf(p -> p.getId() == idProducto);
+
+        if (eliminadoDeExtras) {
+            // Limpiar imagen asociada
+            imagenesAdmin.remove(idProducto);
+            // Quitar del StockStore (evita alertas de stock fantasma)
+            StockStore.eliminar(idProducto);
+            // Persistir el archivo sin ese producto
+            guardar();
+            notificarCambios();
+            System.out.println("[CatalogoStore] Producto extra #" + idProducto + " eliminado y archivo actualizado.");
+            return true;
+        }
+
+        // ── 2. Buscar en catalogoBase ─────────────────────────────────────────
+        boolean eliminadoDeBase = catalogoBase.removeIf(p -> p.getId() == idProducto);
+
+        if (eliminadoDeBase) {
+            // Solo eliminación en memoria; los base no tienen archivo propio
+            StockStore.eliminar(idProducto);
+            notificarCambios();
+            System.out.println("[CatalogoStore] Producto base #" + idProducto + " eliminado de memoria (sesión actual).");
+            return true;
+        }
+
+        System.err.println("⚠ CatalogoStore: eliminar() — producto #" + idProducto + " no encontrado.");
+        return false;
+    }
+
+    /**
+     * Indica si un producto es de tipo "extra" (creado por el admin).
+     * Útil para mostrar advertencia diferenciada en la UI antes de eliminar.
+     *
+     * @param idProducto ID a consultar
+     * @return {@code true} si está en {@code extras}; {@code false} si es base o no existe.
+     */
+    public static synchronized boolean esExtra(int idProducto) {
+        if (!cargado) { cargar(); cargado = true; }
+        return extras.stream().anyMatch(p -> p.getId() == idProducto);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
  
     /** Devuelve el próximo ID disponible para productos admin (≥ 100). */
     public static synchronized int siguienteId() {
@@ -227,9 +292,6 @@ private static final String ARCHIVO = "harmonia_catalogo_extra.txt";
                         imagenesAdmin.put(id, imgPath);
                     }
  
-                    // Registrar en StockStore (puede ya existir si el usuario lo agregó
-                    // antes en esta misma sesión — registrar() no sobreescribe si el
-                    // stock ya fue decrementado, pero aquí sí queremos el valor del disco)
                     StockStore.registrar(id, nom, stock, idCat);
  
                 } catch (Exception ex) {

@@ -1,4 +1,3 @@
 # id|nombre|descripcion|precio|idCategoria|stock|imagePath
-100|Ibanez RG550 Genesis|Guitarra eléctrica japonesa con cuerpo basswood y mástil Wizard III|4850000.00|1|0|prodimg/Gemini_Generated_Image_dz1cx6dz1cx6dz1c (1)_1780020024077.png
-101|Rode NT1 5th Generation|Micrófono de condensador cardioide con previo de 32 bits y conexión dual XLR/USB-C|1890000.00|5|15|
-102|Rode NT1 5th Generation|Micrófono de condensador cardioide con previo de 32 bits y conexión dual XLR/USB-C|1890000.00|5|0|C:\Users\CARLOS ANAYA\OneDrive\Documentos\NetBeansProjects\harmoniaa\prodimg\Gemini_Generated_Image_12tbci12tbci12tb_1780021636730.png
+100|Ibanez RG550 Genesis|Guitarra eléctrica japonesa con cuerpo basswood y mástil Wizard III|4850000.00|1|10|prodimg/Gemini_Generated_Image_dz1cx6dz1cx6dz1c (1)_1780020024077.png
+102|Rode NT1 5th Generation|Micrófono de condensador cardioide con previo de 32 bits y conexión dual XLR/USB-C|1890000.00|5|15|C:\Users\CARLOS ANAYA\OneDrive\Documentos\NetBeansProjects\harmoniaa\prodimg\Gemini_Generated_Image_12tbci12tbci12tb_1780021636730.png

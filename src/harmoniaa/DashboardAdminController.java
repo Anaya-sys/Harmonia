@@ -1177,11 +1177,92 @@ private VBox crearFilaInventario(Producto p, boolean esExtra, VBox contenedor) {
             }
         });
  
+        // ── Botón Eliminar producto ───────────────────────────────────────────
+        Button btnEliminar = new Button("🗑");
+        btnEliminar.setTooltip(new javafx.scene.control.Tooltip("Eliminar producto"));
+        btnEliminar.setStyle(
+            "-fx-background-color: rgba(239,68,68,0.10); -fx-background-radius: 7; " +
+            "-fx-border-color: rgba(239,68,68,0.30); -fx-border-radius: 7; " +
+            "-fx-text-fill: #ef4444; -fx-font-size: 13px; -fx-cursor: hand; " +
+            "-fx-padding: 5 10 5 10;");
+        btnEliminar.setOnMouseEntered(ev -> btnEliminar.setStyle(
+            "-fx-background-color: rgba(239,68,68,0.26); -fx-background-radius: 7; " +
+            "-fx-border-color: #ef4444; -fx-border-radius: 7; " +
+            "-fx-text-fill: white; -fx-font-size: 13px; -fx-cursor: hand; " +
+            "-fx-padding: 5 10 5 10;"));
+        btnEliminar.setOnMouseExited(ev -> btnEliminar.setStyle(
+            "-fx-background-color: rgba(239,68,68,0.10); -fx-background-radius: 7; " +
+            "-fx-border-color: rgba(239,68,68,0.30); -fx-border-radius: 7; " +
+            "-fx-text-fill: #ef4444; -fx-font-size: 13px; -fx-cursor: hand; " +
+            "-fx-padding: 5 10 5 10;"));
+
+        btnEliminar.setOnAction(ev -> handleEliminarProducto(p, esExtra));
+
         // ── Agregando imgBox al HBox principal en lugar de emoji ──────────────
         fila.getChildren().addAll(imgBox, info, lblVars, lblStock, precio, idLbl,
-                                  txtCantidad, btnConfirmarRestock, btnRestock);
+                                  txtCantidad, btnConfirmarRestock, btnRestock, btnEliminar);
         wrapper.getChildren().add(fila);
         return wrapper;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  ELIMINAR PRODUCTO — flujo completo con confirmación
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Gestiona el flujo completo de eliminación de un producto:
+     *  1. Muestra un Alert de confirmación con advertencia según tipo (base/extra).
+     *  2. Si el usuario confirma, llama a {@link CatalogoStore#eliminar(int)}.
+     *  3. Refresca el inventario y el overview.
+     *  4. Muestra un toast con el resultado.
+     *
+     * @param p       Producto a eliminar
+     * @param esExtra {@code true} si es un producto creado por el admin
+     */
+    private void handleEliminarProducto(Producto p, boolean esExtra) {
+        // ── Construir diálogo de confirmación ─────────────────────────────────
+        Alert alerta = new Alert(Alert.AlertType.CONFIRMATION);
+        alerta.setTitle("Eliminar producto");
+        alerta.setHeaderText("¿Eliminar \"" + p.getNombre() + "\" (#" + p.getId() + ")?");
+
+        String advertencia = esExtra
+            ? "Este producto fue agregado por el administrador.\n" +
+              "Se eliminará del catálogo y del archivo en disco.\n" +
+              "Esta acción no se puede deshacer."
+            : "⚠ Este es un producto BASE del catálogo original.\n" +
+              "Se eliminará solo en memoria durante esta sesión.\n" +
+              "Al reiniciar la aplicación volverá a aparecer.";
+
+        alerta.setContentText(advertencia);
+
+        // Personalizar los botones del diálogo
+        ButtonType btnConfirmar = new ButtonType("Eliminar", javafx.scene.control.ButtonBar.ButtonData.OK_DONE);
+        ButtonType btnCancelar  = new ButtonType("Cancelar", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+        alerta.getButtonTypes().setAll(btnConfirmar, btnCancelar);
+
+        // Estilizar el diálogo para que combine con el tema oscuro de la app
+        alerta.getDialogPane().setStyle(
+            "-fx-background-color: #1E1A2E; -fx-text-fill: #E9E9ED;");
+
+        // Aplicar color rojo al botón "Eliminar"
+        alerta.getDialogPane().lookupButton(btnConfirmar).setStyle(
+            "-fx-background-color: #ef4444; -fx-text-fill: white; " +
+            "-fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;");
+
+        // ── Procesar la respuesta del usuario ─────────────────────────────────
+        alerta.showAndWait().ifPresent(respuesta -> {
+            if (respuesta == btnConfirmar) {
+                boolean ok = CatalogoStore.eliminar(p.getId());
+                if (ok) {
+                    String tipo = esExtra ? "extra" : "base (sesión)";
+                    mostrarToast("🗑 Producto \"" + p.getNombre() + "\" eliminado del catálogo [" + tipo + "].");
+                    renderCatalogoAdmin();   // refresca el inventario completo
+                    actualizarOverview();    // actualiza stat-cards y alertas de stock
+                } else {
+                    mostrarToast("⚠ No se pudo eliminar el producto #" + p.getId() + ". Intenta de nuevo.");
+                }
+            }
+        });
     }
  
     @FXML private void navegarUsuariosAdmin() {

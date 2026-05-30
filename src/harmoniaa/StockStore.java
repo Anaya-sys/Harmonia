@@ -4,8 +4,16 @@
  */
 package harmoniaa;
 
+import static harmoniaa.CatalogoStore.guardar;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,16 +25,26 @@ import java.util.Map;
 public class StockStore {
     /** Umbral por defecto: ≤ 5 unidades → alerta de stock bajo. */
     public static final int UMBRAL = 5;
- 
+    private static boolean cargado = false;
+    private static List<Producto> catalogoBase = new ArrayList<>();
     // id → nombre del producto
     private static final Map<Integer, String>  nombres = new LinkedHashMap<>();
     // id → stock actual (suma de todas las variantes)
     private static final Map<Integer, Integer> stocks  = new LinkedHashMap<>();
     // id → idCategoria (para mostrar emoji en la alerta)
     private static final Map<Integer, Integer> cats    = new LinkedHashMap<>();
- 
+    private static final java.util.List<Runnable> listeners = new java.util.ArrayList<>();
+    
+    private static final List<Producto>      extras       = new ArrayList<>();
+    private static final Map<Integer,String> imagenesAdmin = new HashMap<>();
+    private static final String ARCHIVO = "harmonia_catalogo_extra.txt";
+    private static final String SEP     = "|";
+    
     private StockStore() {}
- 
+    
+    
+    
+    
     // ── API pública ───────────────────────────────────────────────────────────
  
     /**
@@ -34,7 +52,10 @@ public class StockStore {
      * Llamar desde CatalogoStore.agregar() para productos admin,
      * y desde StockStore.inicializarBase() para el catálogo base.
      */
-    public static synchronized void registrar(int id, String nombre,
+
+
+
+        public static synchronized void registrar(int id, String nombre,
                                                int stock, int idCategoria) {
         nombres.put(id, nombre);
         stocks.put(id, Math.max(0, stock));
@@ -57,6 +78,61 @@ public class StockStore {
             registrar(p.getId(), p.getNombre(), total, p.getIdCategoria());
         }
     }
+    
+    private static void notificarCambios() {
+    for(Runnable listener : listeners) {
+        listener.run();
+    }
+    }
+    
+    
+        private static void cargar() {
+        extras.clear();
+        imagenesAdmin.clear();
+ 
+        Path ruta = Paths.get(ARCHIVO);
+        if (!Files.exists(ruta)) return;
+ 
+        try (BufferedReader br = new BufferedReader(new FileReader(ARCHIVO))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                linea = linea.trim();
+                if (linea.isEmpty() || linea.startsWith("#")) continue;
+                String[] c = linea.split("\\" + SEP, -1);
+                if (c.length < 5) continue;
+                try {
+                    int    id        = Integer.parseInt(c[0].trim());
+                    String nom       = c[1];
+                    String desc      = c[2];
+                    double precio    = Double.parseDouble(c[3].trim());
+                    int    idCat     = Integer.parseInt(c[4].trim());
+                    int    stock     = c.length > 5 ? Integer.parseInt(c[5].trim()) : 10;
+                    String imgPath   = c.length > 6 ? c[6].trim() : "";
+ 
+                    Producto prod = new Producto(id, nom, desc, precio, 0, idCat);
+                    prod.agregarVariante(new Variante(id * 100, "Estándar", 0.0, stock));
+                    extras.add(prod);
+ 
+                    if (!imgPath.isEmpty()) {
+                        imagenesAdmin.put(id, imgPath);
+                    }
+ 
+                    // Registrar en StockStore (puede ya existir si el usuario lo agregó
+                    // antes en esta misma sesión — registrar() no sobreescribe si el
+                    // stock ya fue decrementado, pero aquí sí queremos el valor del disco)
+                    StockStore.registrar(id, nom, stock, idCat);
+ 
+                } catch (Exception ex) {
+                    System.err.println("⚠ CatalogoStore: línea malformada — " + ex.getMessage());
+                }
+            }
+        } catch (IOException ex) {
+            System.err.println("⚠ CatalogoStore: error leyendo " + ARCHIVO + " — " + ex.getMessage());
+        }
+ 
+        System.out.println("[CatalogoStore] " + extras.size() + " productos extra cargados.");
+    }
+    
  
     private static final String ARCHIVO_STOCK = "harmonia_stock.txt";
 
@@ -139,6 +215,38 @@ public class StockStore {
         return stocks.size();
     }
  
+    public static synchronized boolean eliminar(int idProducto) {
+        if (!cargado) {cargar(); cargado = true; }
+
+        // ── 1. Buscar en extras ───────────────────────────────────────────────
+        boolean eliminadoDeExtras = extras.removeIf(p -> p.getId() == idProducto);
+
+        if (eliminadoDeExtras) {
+            // Limpiar imagen asociada
+            imagenesAdmin.remove(idProducto);
+            // Quitar del StockStore (evita alertas de stock fantasma)
+            StockStore.eliminar(idProducto);
+            // Persistir el archivo sin ese producto
+            guardar();
+            notificarCambios();
+            System.out.println("[CatalogoStore] Producto extra #" + idProducto + " eliminado y archivo actualizado.");
+            return true;
+        }
+
+        // ── 2. Buscar en catalogoBase ─────────────────────────────────────────
+        boolean eliminadoDeBase = catalogoBase.removeIf(p -> p.getId() == idProducto);
+
+        if (eliminadoDeBase) {
+            // Solo eliminación en memoria; los base no tienen archivo propio
+            StockStore.eliminar(idProducto);
+            notificarCambios();
+            System.out.println("[CatalogoStore] Producto base #" + idProducto + " eliminado de memoria (sesión actual).");
+            return true;
+        }
+
+        System.err.println("⚠ CatalogoStore: eliminar() — producto #" + idProducto + " no encontrado.");
+        return false;
+    }
     // ── DTO ───────────────────────────────────────────────────────────────────
  
     /**
