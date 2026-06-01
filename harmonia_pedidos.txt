@@ -14,3 +14,4 @@
 13|3|ENTREGADO|2026-05-28|3499000.00|Dirección por definir
 14|3|ENTREGADO|2026-05-28|33950000.00|Dirección por definir
 15|3|ENTREGADO|2026-05-28|4280000.00|Dirección por definir
+16|3|ENTREGADO|2026-06-01|175341000.00|Dirección por definir

@@ -22,3 +22,9 @@
 13|10|Saxofón Alto Yamaha YAS-280|3499000.00|19|Lacado Dorado|0.00|1
 14|100|Ibanez RG550 Genesis|4850000.00|10000|Estándar|0.00|7
 15|102|Rode NT1 5th Generation|1890000.00|10200|Kit completo + filtro pop|250000.00|2
+16|111|Sennheiser HD 400 Pro|1290000.00|11100|Estándar|0.00|4
+16|107|Yamaha YBS-52 Saxofón Barítono|9800000.00|10700|Estándar|0.00|6
+16|105|Korg Minilogue XD|4299000.00|10500|Estándar|0.00|5
+16|112|Fender Newporter Player Guitarra Acústica|2850000.00|11200|Estándar|0.00|6
+16|104|Fender Jazz Bass Player|3499000.00|10400|Estándar|0.00|7
+16|103|Gibson SG Standard|6899000.00|10300|Estándar|0.00|7
