@@ -579,7 +579,7 @@
                             <HBox alignment="CENTER_LEFT" spacing="8"
                                   style="-fx-padding: 0 16 14 16;">
                                 <Label text="Filtros"
-                                       style="-fx-font-size: 17px;
+                                       style="-fx-font-size: 21px;
                                               -fx-font-weight: bold;
                                               -fx-text-fill: #E9E9ED;"/>
                                 <Region HBox.hgrow="ALWAYS"/>
@@ -588,7 +588,7 @@
                                         onAction="#limpiarFiltros"
                                         style="-fx-background-color: transparent;
                                                -fx-text-fill: #564AB5;
-                                               -fx-font-size: 13px;
+                                               -fx-font-size: 15px;
                                                -fx-cursor: hand;
                                                -fx-underline: true;
                                                -fx-padding: 0;"/>
@@ -600,7 +600,7 @@
                             <!-- ── SECCIÓN: CATEGORÍAS ── -->
                             <VBox spacing="3" style="-fx-padding: 18 10 14 10;">
                                 <Label text="Categorías"
-                                       style="-fx-font-size: 11px;
+                                       style="-fx-font-size: 13px;
                                               -fx-font-weight: bold;
                                               -fx-text-fill: #BC7F15;
                                               -fx-letter-spacing: 1px;
@@ -610,7 +610,7 @@
                                         text="  Todas"
                                         maxWidth="99999"
                                         alignment="CENTER_LEFT"
-                                        prefHeight="40.0"
+                                        prefHeight="44.0"
                                         mnemonicParsing="false"
                                         onAction="#filtrarCategoria"
                                         style="-fx-background-color: rgba(86,74,181,0.2);
@@ -618,7 +618,7 @@
                                                -fx-border-color: #564AB5;
                                                -fx-border-radius: 8;
                                                -fx-text-fill: #A99CF0;
-                                               -fx-font-size: 13px;
+                                               -fx-font-size: 15px;
                                                -fx-font-weight: bold;
                                                -fx-cursor: hand;
                                                -fx-padding: 0 10 0 12;"/>
@@ -627,13 +627,13 @@
                                         text="🎸  Guitarras"
                                         maxWidth="99999"
                                         alignment="CENTER_LEFT"
-                                        prefHeight="40.0"
+                                        prefHeight="44.0"
                                         mnemonicParsing="false"
                                         onAction="#filtrarCategoria"
                                         style="-fx-background-color: transparent;
                                                -fx-background-radius: 8;
                                                -fx-text-fill: #8F8AA8;
-                                               -fx-font-size: 13px;
+                                               -fx-font-size: 15px;
                                                -fx-cursor: hand;
                                                -fx-padding: 0 10 0 12;"/>
 
@@ -641,13 +641,13 @@
                                         text="🎹  Teclados"
                                         maxWidth="99999"
                                         alignment="CENTER_LEFT"
-                                        prefHeight="40.0"
+                                        prefHeight="44.0"
                                         mnemonicParsing="false"
                                         onAction="#filtrarCategoria"
                                         style="-fx-background-color: transparent;
                                                -fx-background-radius: 8;
                                                -fx-text-fill: #8F8AA8;
-                                               -fx-font-size: 13px;
+                                               -fx-font-size: 15px;
                                                -fx-cursor: hand;
                                                -fx-padding: 0 10 0 12;"/>
 
@@ -655,13 +655,13 @@
                                         text="🥁  Percusión"
                                         maxWidth="99999"
                                         alignment="CENTER_LEFT"
-                                        prefHeight="40.0"
+                                        prefHeight="44.0"
                                         mnemonicParsing="false"
                                         onAction="#filtrarCategoria"
                                         style="-fx-background-color: transparent;
                                                -fx-background-radius: 8;
                                                -fx-text-fill: #8F8AA8;
-                                               -fx-font-size: 13px;
+                                               -fx-font-size: 15px;
                                                -fx-cursor: hand;
                                                -fx-padding: 0 10 0 12;"/>
 
@@ -669,13 +669,13 @@
                                         text="🎺  Vientos"
                                         maxWidth="99999"
                                         alignment="CENTER_LEFT"
-                                        prefHeight="40.0"
+                                        prefHeight="44.0"
                                         mnemonicParsing="false"
                                         onAction="#filtrarCategoria"
                                         style="-fx-background-color: transparent;
                                                -fx-background-radius: 8;
                                                -fx-text-fill: #8F8AA8;
-                                               -fx-font-size: 13px;
+                                               -fx-font-size: 15px;
                                                -fx-cursor: hand;
                                                -fx-padding: 0 10 0 12;"/>
 
@@ -683,13 +683,13 @@
                                         text="🎧  Accesorios"
                                         maxWidth="99999"
                                         alignment="CENTER_LEFT"
-                                        prefHeight="40.0"
+                                        prefHeight="44.0"
                                         mnemonicParsing="false"
                                         onAction="#filtrarCategoria"
                                         style="-fx-background-color: transparent;
                                                -fx-background-radius: 8;
                                                -fx-text-fill: #8F8AA8;
-                                               -fx-font-size: 13px;
+                                               -fx-font-size: 15px;
                                                -fx-cursor: hand;
                                                -fx-padding: 0 10 0 12;"/>
                             </VBox>
@@ -701,7 +701,7 @@
                             <VBox spacing="10" style="-fx-padding: 16 12 16 12;">
 
                                 <Label text="Precio"
-                                       style="-fx-font-size: 11px;
+                                       style="-fx-font-size: 13px;
                                               -fx-font-weight: bold;
                                               -fx-text-fill: #BC7F15;
                                               -fx-letter-spacing: 1px;
@@ -788,7 +788,7 @@
                             <!-- ── SECCIÓN: DISPONIBILIDAD ── -->
                             <VBox spacing="4" style="-fx-padding: 16 10 14 10;">
                                 <Label text="Disponibilidad"
-                                       style="-fx-font-size: 11px;
+                                       style="-fx-font-size: 13px;
                                               -fx-font-weight: bold;
                                               -fx-text-fill: #BC7F15;
                                               -fx-letter-spacing: 1px;
@@ -798,7 +798,7 @@
                                         text="Todos"
                                         maxWidth="99999"
                                         alignment="CENTER_LEFT"
-                                        prefHeight="40.0"
+                                        prefHeight="44.0"
                                         mnemonicParsing="false"
                                         onAction="#filtrarDisponibilidad"
                                         style="-fx-background-color: rgba(86,74,181,0.15);
@@ -806,7 +806,7 @@
                                                -fx-border-color: rgba(86,74,181,0.4);
                                                -fx-border-radius: 8;
                                                -fx-text-fill: #A99CF0;
-                                               -fx-font-size: 13px;
+                                               -fx-font-size: 15px;
                                                -fx-cursor: hand;
                                                -fx-padding: 0 10 0 12;"/>
 
@@ -814,13 +814,13 @@
                                         text="✓  Con Stock"
                                         maxWidth="99999"
                                         alignment="CENTER_LEFT"
-                                        prefHeight="40.0"
+                                        prefHeight="44.0"
                                         mnemonicParsing="false"
                                         onAction="#filtrarDisponibilidad"
                                         style="-fx-background-color: transparent;
                                                -fx-background-radius: 8;
                                                -fx-text-fill: #8F8AA8;
-                                               -fx-font-size: 13px;
+                                               -fx-font-size: 15px;
                                                -fx-cursor: hand;
                                                -fx-padding: 0 10 0 12;"/>
                             </VBox>
@@ -935,8 +935,9 @@
 
                                 <!-- FlowPane con las tarjetas -->
                                 <FlowPane fx:id="catalogoGrid"
-                                          hgap="16" vgap="20"
-                                          prefWrapLength="900"
+                                          hgap="18" vgap="22"
+                                          prefWrapLength="1140"
+                                          maxWidth="99999"
                                           style="-fx-background-color: transparent;"/>
 
                             </VBox>

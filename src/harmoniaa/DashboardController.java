@@ -178,8 +178,8 @@ public class DashboardController {
     }
  
     
-    private static final double CARD_WIDTH    = 290;
-    private static final double IMG_HEIGHT    = 220;
+    private static final double CARD_WIDTH    = 360;
+    private static final double IMG_HEIGHT    = 360;
     private static final double NOMBRE_HEIGHT = 46;
     private static final double DESC_HEIGHT   = 38;
  
@@ -1268,20 +1268,8 @@ private VBox crearTarjetaProducto(Producto p) {
     // --- LÓGICA DE ALERTA DINÁMICA DE STOCK ---
     int stockTotal = calcularStockTotal(p);
 
-    // Badge stock general: solo se muestra si hay stock real > 0
-    if (stockTotal > 0) {
-        Label badge = new Label("✓ Stock");
-        badge.setStyle(
-            "-fx-background-color: rgba(16,185,129,0.18); -fx-background-radius: 6; " +
-            "-fx-border-color: rgba(16,185,129,0.35); -fx-border-radius: 6; " +
-            "-fx-text-fill: #10b981; -fx-font-size: 10px; -fx-font-weight: bold; -fx-padding: 3 8 3 8;");
-        VBox bw = new VBox(badge); bw.setStyle("-fx-padding: 8 0 0 8;");
-        StackPane.setAlignment(bw, Pos.TOP_LEFT);
-        imgZone.getChildren().add(bw);
-    }
-
+    // Badge inferior (agotado / pocas unidades) — parte inferior izquierda
     if (stockTotal == 0) {
-        // 1. Si llegó a 0: Mostrar badge rojo "⛔ ¡AGOTADO!"
         Label badgeAgotado = new Label("⛔ ¡AGOTADO!");
         badgeAgotado.setStyle(
             "-fx-background-color: rgba(239,68,68,0.95); -fx-background-radius: 6; " +
@@ -1290,10 +1278,8 @@ private VBox crearTarjetaProducto(Producto p) {
         VBox bwAgotado = new VBox(badgeAgotado);
         bwAgotado.setStyle("-fx-padding: 0 0 8 0;");
         StackPane.setAlignment(bwAgotado, Pos.BOTTOM_LEFT);
-        imgZone.getChildren().add(bwAgotado); 
-
+        imgZone.getChildren().add(bwAgotado);
     } else if (stockTotal <= 5) {
-        // 2. Si quedan entre 1 y 5: Mostrar badge naranja dinámico
         Label badgePoco = new Label("🔥 ¡Últimas " + stockTotal + " unidades!");
         badgePoco.setStyle(
             "-fx-background-color: rgba(245,158,11,0.90); -fx-background-radius: 6; " +
@@ -1302,26 +1288,60 @@ private VBox crearTarjetaProducto(Producto p) {
         VBox bwPoco = new VBox(badgePoco);
         bwPoco.setStyle("-fx-padding: 0 0 8 0;");
         StackPane.setAlignment(bwPoco, Pos.BOTTOM_LEFT);
-        imgZone.getChildren().add(bwPoco); 
+        imgZone.getChildren().add(bwPoco);
     }
     // -------------------------------------------------
 
-    // Botón deseo
-    Button btnDeseo = new Button(deseos.contiene(p.getId()) ? "♥" : "♡");
-    btnDeseo.setStyle(
-        "-fx-background-color: rgba(13,13,20,0.7); -fx-background-radius: 50%; " +
-        "-fx-text-fill: " + (deseos.contiene(p.getId()) ? "#ef4444" : "#8F8AA8") + "; " +
-        "-fx-font-size: 13px; -fx-cursor: hand; -fx-padding: 4 6 4 6; " +
-        "-fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 50%;");
+    // Fila superior: corazón (izquierda) + stock (derecha) en un mismo HBox
+    // Así nunca se superponen y el corazón siempre recibe los clicks correctamente.
+    boolean yaEnDeseos = deseos.contiene(p.getId());
+    Button btnDeseo = new Button(yaEnDeseos ? "♥" : "♡");
+    btnDeseo.setPrefSize(42, 42); btnDeseo.setMinSize(42, 42); btnDeseo.setMaxSize(42, 42);
+    String estiloDeseoNormal = "-fx-background-color: rgba(13,13,20,0.72); -fx-background-radius: 50%; " +
+        "-fx-text-fill: " + (yaEnDeseos ? "#ef4444" : "#C0BBDD") + "; " +
+        "-fx-font-size: 20px; -fx-cursor: hand; -fx-padding: 0; " +
+        "-fx-border-color: rgba(255,255,255,0.15); -fx-border-radius: 50%; " +
+        "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.4),6,0,0,2);";
+    btnDeseo.setStyle(estiloDeseoNormal);
+    btnDeseo.setOnMouseEntered(e -> btnDeseo.setStyle(
+        "-fx-background-color: rgba(239,68,68,0.18); -fx-background-radius: 50%; " +
+        "-fx-text-fill: #ef4444; -fx-font-size: 20px; -fx-cursor: hand; -fx-padding: 0; " +
+        "-fx-border-color: rgba(239,68,68,0.5); -fx-border-radius: 50%;"));
+    btnDeseo.setOnMouseExited(e -> btnDeseo.setStyle(estiloDeseoNormal));
     btnDeseo.setOnAction(e -> {
         if (deseos.contiene(p.getId())) deseos.quitar(p.getId());
         else deseos.agregar(p);
-        e.consume(); // no propagar al click del card
+        e.consume();
         renderCatalogo();
     });
-    VBox dw = new VBox(btnDeseo); dw.setStyle("-fx-padding: 8 8 0 0;");
-    StackPane.setAlignment(dw, Pos.TOP_RIGHT);
-    imgZone.getChildren().add(dw);
+
+    // Fila superior: corazón (izquierda) + stock (derecha)
+    // Se usa un StackPane auxiliar que ocupa SOLO la fila de arriba (altura fija)
+    // para que no compita con el alto total de imgZone.
+    HBox topRow = new HBox();
+    topRow.setAlignment(Pos.TOP_LEFT);
+    topRow.setPickOnBounds(false);
+    topRow.setPrefHeight(62); topRow.setMinHeight(62); topRow.setMaxHeight(62);
+    topRow.setPrefWidth(Double.MAX_VALUE); topRow.setMaxWidth(Double.MAX_VALUE);
+    topRow.setStyle("-fx-padding: 10 8 0 10; -fx-background-color: transparent;");
+
+    Region spacerTop = new Region();
+    HBox.setHgrow(spacerTop, Priority.ALWAYS);
+
+    if (stockTotal > 0) {
+        Label badge = new Label("✓ Stock");
+        badge.setStyle(
+            "-fx-background-color: rgba(16,185,129,0.18); -fx-background-radius: 6; " +
+            "-fx-border-color: rgba(16,185,129,0.35); -fx-border-radius: 6; " +
+            "-fx-text-fill: #10b981; -fx-font-size: 10px; -fx-font-weight: bold; " +
+            "-fx-padding: 3 8 3 8;");
+        topRow.getChildren().addAll(btnDeseo, spacerTop, badge);
+    } else {
+        topRow.getChildren().addAll(btnDeseo, spacerTop);
+    }
+
+    StackPane.setAlignment(topRow, Pos.TOP_LEFT);
+    imgZone.getChildren().add(topRow);
 
     // Cuerpo texto
     VBox body = new VBox(5);
@@ -1524,38 +1544,95 @@ private VBox crearTarjetaProducto(Producto p) {
     // ══════════════════════════════════════════════════════════════════════════
     private void construirCategoriasBar() {
         categoriasBar.getChildren().clear();
+        final double W = 200, H = 200;
+
         String[][] cats = {
-            {"🎸", "Guitarras"}, {"🎹", "Pianos"}, {"🥁", "Percusión"},
-            {"🎻", "Cuerdas"},   {"🎤", "Voz"},    {"🎧", "Accesorios"}
+            {"Guitarras",  "prodimg/p1_fender_strat.png"},
+            {"Pianos",     "prodimg/p5_yamaha_p125.png"},
+            {"Percusión",  "prodimg/p8_roland_td17.png"},
+            {"Vientos",    "prodimg/p10_yamaha_sax.png"},
+            {"Voz",        "prodimg/p13_shure_sm58.png"},
+            {"Accesorios", "prodimg/p12_ath_m50x.png"}
         };
-        boolean primera = true;
+
         for (String[] cat : cats) {
-            VBox chip = new VBox(8);
-            chip.setAlignment(Pos.CENTER);
-            chip.setPadding(new Insets(16, 12, 16, 12));
-            HBox.setHgrow(chip, Priority.ALWAYS);  // cada chip ocupa el espacio disponible
-            String base = primera
-                ? "-fx-background-color: rgba(86,74,181,0.22); -fx-border-color: #564AB5;"
-                : "-fx-background-color: #1E1A2E; -fx-border-color: rgba(86,74,181,0.2);";
-            chip.setStyle(base +
-                " -fx-background-radius: 14; -fx-border-radius: 14; -fx-cursor: hand;");
- 
-            Label emojiLbl = new Label(cat[0]);
-            emojiLbl.setStyle("-fx-font-size: 30px;");
-            Label textoLbl = new Label(cat[1]);
-            textoLbl.setStyle("-fx-font-size: 12.5px; -fx-font-weight: bold; " +
-                "-fx-text-fill: " + (primera ? "#A99CF0" : "#8F8AA8") + ";");
- 
-            chip.getChildren().addAll(emojiLbl, textoLbl);
-            chip.setOnMouseEntered(e -> chip.setStyle(
-                "-fx-background-color: rgba(86,74,181,0.22); -fx-border-color: #564AB5; " +
-                "-fx-background-radius: 14; -fx-border-radius: 14; -fx-cursor: hand;"));
-            chip.setOnMouseExited(e -> chip.setStyle(base +
-                " -fx-background-radius: 14; -fx-border-radius: 14; -fx-cursor: hand;"));
-            chip.setOnMouseClicked(e -> navegarCatalogo());
- 
-            categoriasBar.getChildren().add(chip);
-            primera = false;
+
+            // ── Resolver URL de la imagen ──
+            String imgUrl = "";
+            try {
+                java.net.URL url = getClass().getResource(cat[1]);
+                if (url != null) imgUrl = url.toExternalForm();
+            } catch (Exception ignored) {}
+
+            // -fx-background-size: cover es la solucion correcta:
+            // JavaFX escala la imagen para cubrir toda la celda sin deformarla,
+            // equivalente a object-fit: cover en CSS web.
+            // Al estar en el style del StackPane, crece junto con el nodo
+            // sin necesidad de ImageView ni calculos de viewport.
+            final String finalImgUrl = imgUrl;
+            String bgImg = finalImgUrl.isEmpty() ? "" :
+                "-fx-background-image: url('" + finalImgUrl + "');" +
+                "-fx-background-size: cover;" +
+                "-fx-background-position: center center;" +
+                "-fx-background-repeat: no-repeat;";
+
+            // Overlay degradado de abajo para que el texto sea legible
+            javafx.scene.layout.Region overlay = new javafx.scene.layout.Region();
+            overlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+            overlay.setOpacity(0.9);
+            overlay.setStyle("-fx-background-color: linear-gradient(" +
+                "to bottom, rgba(14,12,24,0.05) 20%, rgba(14,12,24,0.86) 100%);");
+
+            // ── Nombre abajo centrado ──
+            Label lblNombre = new Label(cat[0]);
+            lblNombre.setStyle(
+                "-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #F0EEF8;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,1.0), 10, 0, 0, 2);");
+            StackPane.setAlignment(lblNombre, Pos.BOTTOM_CENTER);
+            StackPane.setMargin(lblNombre, new Insets(0, 0, 22, 0));
+
+            String styleNormal =
+                bgImg +
+                "-fx-border-color: rgba(86,74,181,0.30); " +
+                "-fx-border-width: 1; -fx-border-radius: 16; -fx-cursor: hand;";
+            String styleHover =
+                bgImg +
+                "-fx-border-color: #A99CF0; " +
+                "-fx-border-width: 2; -fx-border-radius: 16; -fx-cursor: hand;" +
+                "-fx-effect: dropshadow(gaussian,rgba(108,92,231,0.5),22,0,0,5);";
+
+            // ── StackPane con imagen de fondo CSS cover ──
+            StackPane stack = new StackPane(overlay, lblNombre);
+            stack.setPrefSize(W, H);
+            stack.setMinSize(W, H);
+            stack.setMaxSize(Double.MAX_VALUE, H);
+            HBox.setHgrow(stack, Priority.ALWAYS);
+            stack.setStyle(styleNormal);
+
+            // Clip redondeado que sigue el ancho real del stack
+            Rectangle clip = new Rectangle();
+            clip.setArcWidth(18); clip.setArcHeight(18);
+            clip.widthProperty().bind(stack.widthProperty());
+            clip.heightProperty().bind(stack.heightProperty());
+            stack.setClip(clip);
+
+            stack.setOnMouseEntered(e -> {
+                overlay.setOpacity(0.6);
+                lblNombre.setStyle(
+                    "-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;" +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,1.0), 10, 0, 0, 2);");
+                stack.setStyle(styleHover);
+            });
+            stack.setOnMouseExited(e -> {
+                overlay.setOpacity(0.9);
+                lblNombre.setStyle(
+                    "-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #F0EEF8;" +
+                    "-fx-effect: dropshadow(gaussian, rgba(0,0,0,1.0), 10, 0, 0, 2);");
+                stack.setStyle(styleNormal);
+            });
+            stack.setOnMouseClicked(e -> navegarCatalogo());
+
+            categoriasBar.getChildren().add(stack);
         }
     }
  
@@ -1977,105 +2054,105 @@ private VBox crearTarjetaProducto(Producto p) {
         // ── CABECERA DE LA TARJETA ────────────────────────────────────────────
         HBox header = new HBox(12);
         header.setAlignment(Pos.CENTER_LEFT);
-        header.setPadding(new Insets(16, 18, 14, 18));
+        header.setPadding(new Insets(22, 24, 18, 24));
         header.setStyle("-fx-border-color: rgba(86,74,181,0.12); -fx-border-width: 0 0 1 0;");
  
         // Número relativo al usuario (Tu pedido #1, #2, etc.)
         Label lblNum = new Label("Pedido  #" + numUsuario);
-        lblNum.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
- 
+        lblNum.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+
         Region spacerH = new Region(); HBox.setHgrow(spacerH, Priority.ALWAYS);
- 
+
         Label estadoBadge = crearBadgeEstado(estadoTexto);
- 
+
         int totalItems = items.stream().mapToInt(ItemCarrito::getCantidad).sum();
         Label lblItems = new Label(totalItems + " producto" + (totalItems != 1 ? "s" : ""));
-        lblItems.setStyle("-fx-font-size: 11px; -fx-text-fill: #6b6890;");
+        lblItems.setStyle("-fx-font-size: 13px; -fx-text-fill: #8F8AA8;");
  
         header.getChildren().addAll(lblNum, spacerH, lblItems, estadoBadge);
  
         // ── TIMELINE DE ESTADO ────────────────────────────────────────────────
         HBox timeline = crearTimeline(estadoTexto);
-        timeline.setPadding(new Insets(12, 18, 12, 18));
+        timeline.setPadding(new Insets(18, 24, 18, 24));
         timeline.setStyle("-fx-border-color: rgba(86,74,181,0.08); -fx-border-width: 0 0 1 0;");
  
         // ── LISTA DE ÍTEMS (máx 2 visibles + "y X más") ───────────────────────
-        VBox listaItems = new VBox(8);
-        listaItems.setPadding(new Insets(14, 18, 12, 18));
- 
+        VBox listaItems = new VBox(14);
+        listaItems.setPadding(new Insets(20, 24, 16, 24));
+
         int maxVisible = Math.min(2, items.size());
         for (int i = 0; i < maxVisible; i++) {
             ItemCarrito it = items.get(i);
-            HBox fila = new HBox(10);
+            HBox fila = new HBox(14);
             fila.setAlignment(Pos.CENTER_LEFT);
- 
+
             StackPane imgBox = new StackPane();
-            imgBox.setPrefSize(40, 40); imgBox.setMinSize(40, 40); imgBox.setMaxSize(40, 40);
-            imgBox.setStyle("-fx-background-color: #13111e; -fx-background-radius: 6;");
-            ImageView ivItem = cargarImagenProducto(it.getProducto(), 40, 40);
+            imgBox.setPrefSize(58, 58); imgBox.setMinSize(58, 58); imgBox.setMaxSize(58, 58);
+            imgBox.setStyle("-fx-background-color: #13111e; -fx-background-radius: 8;");
+            ImageView ivItem = cargarImagenProducto(it.getProducto(), 58, 58);
             if (ivItem != null) {
-                Rectangle clip = new Rectangle(40, 40);
-                clip.setArcWidth(12); clip.setArcHeight(12);
+                Rectangle clip = new Rectangle(58, 58);
+                clip.setArcWidth(16); clip.setArcHeight(16);
                 imgBox.setClip(clip);
                 imgBox.getChildren().add(ivItem);
             } else {
                 Label emojiItem = new Label(getEmojiCategoria(it.getProducto().getIdCategoria()));
-                emojiItem.setStyle("-fx-font-size: 18px;");
+                emojiItem.setStyle("-fx-font-size: 24px;");
                 imgBox.getChildren().add(emojiItem);
             }
- 
-            VBox itemInfo = new VBox(2); HBox.setHgrow(itemInfo, Priority.ALWAYS);
+
+            VBox itemInfo = new VBox(4); HBox.setHgrow(itemInfo, Priority.ALWAYS);
             Label nomItem = new Label(it.getProducto().getNombre());
-            nomItem.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+            nomItem.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
             String vDesc = it.getVariante() != null ? it.getVariante().getDescripcion() : "Estándar";
             Label varItem = new Label("x" + it.getCantidad() + "  ·  " + vDesc);
-            varItem.setStyle("-fx-font-size: 11px; -fx-text-fill: #8F8AA8;");
+            varItem.setStyle("-fx-font-size: 12px; -fx-text-fill: #8F8AA8;");
             itemInfo.getChildren().addAll(nomItem, varItem);
- 
+
             Label subItem = new Label("$" + String.format("%,.0f", it.calcularSubtotal()));
-            subItem.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #BC7F15;");
- 
+            subItem.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #BC7F15;");
+
             fila.getChildren().addAll(imgBox, itemInfo, subItem);
             listaItems.getChildren().add(fila);
         }
         if (items.size() > 2) {
             Label mas = new Label("+ " + (items.size() - 2) + " producto(s) más");
-            mas.setStyle("-fx-font-size: 11px; -fx-text-fill: #6b6890; -fx-padding: 4 0 0 0;");
+            mas.setStyle("-fx-font-size: 12px; -fx-text-fill: #8F8AA8; -fx-padding: 4 0 0 0;");
             listaItems.getChildren().add(mas);
         }
  
         // ── FOOTER: total + botones ────────────────────────────────────────────
         HBox footer = new HBox(10);
         footer.setAlignment(Pos.CENTER_LEFT);
-        footer.setPadding(new Insets(12, 18, 16, 18));
+        footer.setPadding(new Insets(16, 24, 20, 24));
         footer.setStyle("-fx-border-color: rgba(86,74,181,0.1); -fx-border-width: 1 0 0 0;");
  
         Label lblTotal = new Label("Total: $" + String.format("%,.0f", total));
-        lblTotal.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
+        lblTotal.setStyle("-fx-font-size: 19px; -fx-font-weight: bold; -fx-text-fill: #E9E9ED;");
         HBox.setHgrow(lblTotal, Priority.ALWAYS);
- 
+
         Button btnReordenar = new Button("🔄  Reordenar");
         btnReordenar.setStyle(
-            "-fx-background-color: transparent; -fx-background-radius: 8; " +
-            "-fx-border-color: rgba(86,74,181,0.4); -fx-border-radius: 8; " +
-            "-fx-text-fill: #A99CF0; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 7 14 7 14;");
+            "-fx-background-color: transparent; -fx-background-radius: 10; " +
+            "-fx-border-color: rgba(86,74,181,0.4); -fx-border-radius: 10; " +
+            "-fx-text-fill: #A99CF0; -fx-font-size: 13px; -fx-cursor: hand; -fx-padding: 10 20 10 20;");
         btnReordenar.setOnMouseEntered(ev -> btnReordenar.setStyle(
-            "-fx-background-color: rgba(86,74,181,0.15); -fx-background-radius: 8; " +
-            "-fx-border-color: #564AB5; -fx-border-radius: 8; " +
-            "-fx-text-fill: white; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 7 14 7 14;"));
+            "-fx-background-color: rgba(86,74,181,0.15); -fx-background-radius: 10; " +
+            "-fx-border-color: #564AB5; -fx-border-radius: 10; " +
+            "-fx-text-fill: white; -fx-font-size: 13px; -fx-cursor: hand; -fx-padding: 10 20 10 20;"));
         btnReordenar.setOnMouseExited(ev -> btnReordenar.setStyle(
-            "-fx-background-color: transparent; -fx-background-radius: 8; " +
-            "-fx-border-color: rgba(86,74,181,0.4); -fx-border-radius: 8; " +
-            "-fx-text-fill: #A99CF0; -fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 7 14 7 14;"));
+            "-fx-background-color: transparent; -fx-background-radius: 10; " +
+            "-fx-border-color: rgba(86,74,181,0.4); -fx-border-radius: 10; " +
+            "-fx-text-fill: #A99CF0; -fx-font-size: 13px; -fx-cursor: hand; -fx-padding: 10 20 10 20;"));
         btnReordenar.setOnAction(ev -> reordenarPedido(items));
- 
+
         Button btnInfo = new Button("📍  " + obtenerDireccionPedido(pedido));
         btnInfo.setStyle(
-            "-fx-background-color: transparent; -fx-background-radius: 8; " +
-            "-fx-border-color: rgba(188,127,21,0.3); -fx-border-radius: 8; " +
-            "-fx-text-fill: #BC7F15; -fx-font-size: 11px; -fx-cursor: default; -fx-padding: 7 12 7 12;");
+            "-fx-background-color: transparent; -fx-background-radius: 10; " +
+            "-fx-border-color: rgba(188,127,21,0.3); -fx-border-radius: 10; " +
+            "-fx-text-fill: #BC7F15; -fx-font-size: 13px; -fx-cursor: default; -fx-padding: 10 16 10 16;");
         btnInfo.setMouseTransparent(true);
- 
+
         footer.getChildren().addAll(lblTotal, btnInfo, btnReordenar);
         card.getChildren().addAll(header, timeline, listaItems, footer);
  
@@ -2104,8 +2181,8 @@ private VBox crearTarjetaProducto(Producto p) {
     badge.setStyle(
         "-fx-background-color: " + bg + "; -fx-background-radius: 20; " +
         "-fx-border-color: " + color + "44; -fx-border-radius: 20; " +
-        "-fx-text-fill: " + color + "; -fx-font-size: 11px; -fx-font-weight: bold; " +
-        "-fx-padding: 4 12 4 12;");
+        "-fx-text-fill: " + color + "; -fx-font-size: 13px; -fx-font-weight: bold; " +
+        "-fx-padding: 6 16 6 16;");
     return badge;
     }
  
@@ -2134,9 +2211,9 @@ private VBox crearTarjetaProducto(Producto p) {
  
         // ── Círculo ──────────────────────────────────────────────────────
         StackPane circulo = new StackPane();
-        circulo.setPrefSize(28, 28); circulo.setMinSize(28, 28);
- 
-        javafx.scene.shape.Circle bg = new javafx.scene.shape.Circle(14);
+        circulo.setPrefSize(38, 38); circulo.setMinSize(38, 38);
+
+        javafx.scene.shape.Circle bg = new javafx.scene.shape.Circle(19);
         bg.setFill(javafx.scene.paint.Color.web(
             hecho ? "rgba(86,74,181,0.30)" : "rgba(60,56,80,0.4)"));
         bg.setStroke(javafx.scene.paint.Color.web(
@@ -2396,5 +2473,27 @@ private VBox crearTarjetaProducto(Producto p) {
     private static String primerNombre(String nombreCompleto) {
         if (nombreCompleto == null || nombreCompleto.isBlank()) return "Usuario";
         return nombreCompleto.trim().split("\\s+")[0];
+    }
+
+    /**
+     * Aplica un viewport centrado a un ImageView para simular "object-fit: cover":
+     * recorta la imagen al área central en la proporción destino (W×H),
+     * sin deformarla. La imagen llena toda la celda sin barras ni estiramientos.
+     */
+    private void aplicarViewportCover(ImageView iv, Image img, double W, double H) {
+        double imgW = img.getWidth();
+        double imgH = img.getHeight();
+        if (imgW <= 0 || imgH <= 0) return;
+
+        double scaleX = W / imgW;
+        double scaleY = H / imgH;
+        double scale  = Math.max(scaleX, scaleY); // "cover": escala al mayor lado
+
+        double vpW = W / scale; // ancho del viewport en coords originales
+        double vpH = H / scale; // alto del viewport en coords originales
+        double vpX = (imgW - vpW) / 2.0; // centrar horizontalmente
+        double vpY = (imgH - vpH) / 2.0; // centrar verticalmente
+
+        iv.setViewport(new javafx.geometry.Rectangle2D(vpX, vpY, vpW, vpH));
     }
 }
